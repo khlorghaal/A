@@ -38,12 +38,14 @@ static u64 now_us(void){
 }
 
 i2 sdim;//screen dimension
+i2 view= {0,0};
 
 i2 p= {0,0};
 i64 tick;
 
-static void draw(i2 p, char c){
-	mvaddch(p.y,p.x,c);
+static void draw(i2 m, char c){
+	i2 v= m-view+sdim/2;
+	mvaddch(v.y,v.x,c);
 }
 
 static void update(i2* p){
@@ -69,18 +71,16 @@ int main(void){
 
 	//init
 	getmaxyx(stdscr,sdim.y,sdim.x);
-	p= sdim/2;
 
 	//timing
-	const u64 tdt= 20*msec;//target dt
+	const u64 tdt= 150*msec;//target dt
 	t0= now_us();//init
 	u64 t = 0;//most recent
 	u64 tp= 0;//previous
 	//monad
 	while(1){
 		getmaxyx(stdscr,sdim.y,sdim.x);
-		// sdim.x= 20; sdim.y= 20;//!!
-		clear();
+		erase();
 		
 		//input
 		i2 mau= {0,0};
@@ -94,19 +94,22 @@ int main(void){
 					break;
 				mau= (i2){m.x,m.y};
 				break;
+			default:
+			//seq dbg
+				// mvprintw(0, 0, "ch= %d 0x%x", ch, ch);
+				// struct timespec sl2= {0,200000000};
+				// nanosleep(&sl2,0);
+				break;
+			// case 27://ESC
+			// 	goto exit;
 
-			case 27://ESC
-				goto exit;
-
-			default: break;
+			// default: break;
 			}
 		}
 
 		{
 			i2 pad_wh= {7,7};
 			i2 pad_o= sdim-pad_wh-3;
-			if(!isbound( mau,pad_o,pad_o+pad_wh ))
-				goto end_input;
 			wch l[7][22]= {
 				L"  ┌─┐  ",
 				L"  │↑│  ",
@@ -117,25 +120,23 @@ int main(void){
 				L"  └─┘  "};
 			ra(i,7)
 				mvaddwstr( pad_o.y+i,pad_o.x,l[i]);
+				
 			i2 dp= mau-pad_o;
-			if(!isbound( dp,(i2){0,0},(i2){7,7} ))
-				goto end_input;
-
-			char kmap_dpad[7][8]= {//8 as null
-				"  uuu  ",
-				"  uuu  ",
-				"ll   rr",
-				"ll   rr",
-				"ll   rr",
-				"  ddd  ",
-				"  ddd  "};
-			char in_k= kmap_dpad[dp.y][dp.x];
-			if(in_k=='u') p+= (i2){ 0, 1};
-			if(in_k=='l') p+= (i2){-1, 0};
-			if(in_k=='r') p+= (i2){ 1, 0};
-			if(in_k=='d') p+= (i2){ 0,-1};
-
-			end_input:
+			if(isbound(dp, 0,pad_wh)){
+				char kmap_dpad[7][8]= {//8 as null
+					"  uuu  ",
+					"  uuu  ",
+					"ll   rr",
+          "ll   rr",
+					"ll   rr",
+					"  ddd  ",
+					"  ddd  "};
+				char in_k= kmap_dpad[dp.y][dp.x];
+				if(in_k=='u') p+= (i2){ 0, 1};
+				if(in_k=='l') p+= (i2){-1, 0};
+				if(in_k=='r') p+= (i2){ 1, 0};
+				if(in_k=='d') p+= (i2){ 0,-1};
+			}
 		}
 
 		//entities
