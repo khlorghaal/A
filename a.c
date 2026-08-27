@@ -1,8 +1,11 @@
+#include <wchar.h>
 #define NCURSES_WIDECHAR 1
 #include <ncursesw/ncurses.h>
 #include <time.h>
 #include <stdint.h>
 // #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <locale.h>
 #include <stddef.h>
 
@@ -17,11 +20,13 @@
 typedef float f2 __attribute__((ext_vector_type(2)));
 typedef int   i2 __attribute__((ext_vector_type(2)));
 typedef bool  b2 __attribute__((ext_vector_type(2)));
+typedef  uint8_t  u8;
+typedef uint16_t u16;
 typedef  int64_t i64;
 typedef uint64_t u64;
 typedef  int32_t i32;
 typedef uint32_t u32;
-typedef  wchar_t* wch;//nullterm string because utf combining
+typedef  wchar_t wch;//always nullterm string because utf combining
 typedef  cchar_t cch;//cell with format
 inline static bool all(i2 v){ re   v.x & v.y; }
 inline static bool any(i2 v){ re   v.x | v.y; }
@@ -42,14 +47,12 @@ static i64 now_us(void){
 }
 
 static volatile i64 rand_s= 0;
-i64 rand(){
+inline i64 rand(){
 	i64 s= rand_s;
-	i64 r= s*5374753573;
-	r>>=7;
-	r^=0x7351311713773;
+	i64 r=  s*0x5E747531573B1BULL;
+	r= (r>>7)^0x73513E1B7117B3ULL;
 	rand_s= r;
 	rer; }
-//todo rng quality lol
 
 i2 sdim;//screen dimension
 i2 view= {0,0};
@@ -71,34 +74,67 @@ static short rgbpair(rgb fg, rgb bg){
 		((bg >>  8) & 0xff) * 1000 / 255,
 		( bg        & 0xff) * 1000 / 255);
 	init_pair(pair, fc, bc);
-	return pair++;
-}
-void cchgen(cch* r, wch c, rgb fg, rgb bg, bool bold, bool underline){
+	re pair++;}
+cch* cchgen(cch* r, wch* c, rgb fg, rgb bg, bool bold, bool underline){
 	attr_t a = 0;
 	if(bold     ) a |= A_BOLD;
 	if(underline) a |= A_UNDERLINE;
 	setcchar(r, c, a, rgbpair(fg, bg), NULL);
-}
+	rer;}
 
-#define EMAX 0xffff
-// #define BMAX 0xffffff
-//opt via rearranger phase
+void bad(char* s){}
 typedef struct{u64 h; u64 l;} uid;
 uid genuid(){ re (uid){rand(),rand()}; };
 
-#define E(T,D,I) \
-  struct T D;\
+
+typedef u64 etyp;
+cst etyp etyp_ship= 0;
+cst etyp etyp_misl= 1;
+cst etyp etyp_figt= 2;
+cst etyp etyp_sttn= 4;
+
+//cannot create more units- starcraft style
+etyp ccmu_mask= 0;
+void ccmu(etyp v){
+	ccmu_mask|= v;
+	bad("cant more entity"); }
+
+#define E(T,MAX,D,I) \
   typedef struct D T;\
-  T  T##s[EMAX];\
+  cst u64 T##_MAX= MAX;\
+  T  T##s[MAX];\
   T* T##s_end= T##s;\
-  T init_##T(u64 i){ T r; I; T##s_end++; rer;};
+  T* T##s_cap= T##s+MAX;\
+  T* init_##T(){ \
+	  if(T##s_end>=T##s_cap){\
+		  ccmu(etyp_##T); T##s_end--; }\
+	  re T##s_end++;}
 #define ea(E,T) for(T* E=T##s; E!=T##s_end; E++)
 
-E(ship,{
-	uid id;         i2 p;  i32 h;  i32 c; i32 m;    cch s;},{
-	  r.id=genuid(); r.p=0;   r.h=16; r.c=0; r.m= 255; cchgen(&r.s,L"A",0xeeeeee,0x000000,1,0); });
+//opt via rearranger phase
+E(ship,0xffffe,{
+	uid id;         i2 p;  i32 h;  i32 c; i32 m;    cch s;},({
+	   .id=genuid(),  .p=0,   .h=16,  .c=0,  .m= 255,
+	    .s= cchgen(&.s,L"A",0xeeeeee,0x000000,1,0) }));
+//fix palletize cchars
 // E(misl,{ i2 p; i32 h; })
 i64 tick;
+
+
+const u16 ACT_U= 0;//direction
+const u16 ACT_L= 1;
+const u16 ACT_R= 2;
+const u16 ACT_D= 3;
+const u16 ACT_F= 4;
+void act(u16 a){
+  ship* own= ships+0;
+  i2* p= &own->p;
+	switch(a){
+		case (ACT_U): *p+= (i2){ 0, 1}; break;
+		case (ACT_L): *p+= (i2){-1, 0}; break;
+		case (ACT_R): *p+= (i2){ 1, 0}; break;
+		case (ACT_D): *p+= (i2){ 0,-1}; break;
+}}
 
 static void draw(i2 m, cch* c){
 	i2 v= m-view+sdim/2;
@@ -126,7 +162,8 @@ int main(void){
 	//init
 	getmaxyx(stdscr,sdim.y,sdim.x);
 	ra(i,8)
-		init_ship(i);
+		init_ship();
+		
 	
 
 	//timing
@@ -151,11 +188,18 @@ int main(void){
 					break;
 				mau= (i2){m.x,m.y};
 				break;
+			i2* p= &ships[0].p;
+				case KEY_UP   : act(ACT_U); break;
+				case KEY_LEFT : act(ACT_L); break;
+				case KEY_RIGHT: act(ACT_R); break;
+				case KEY_DOWN : act(ACT_D); break;
 			default:
+			#ifdef DBG_KBD
 			//seq dbg
 				// mvprintw(0, 0, "ch= %d 0x%x", ch, ch);
 				// struct timespec sl2= {0,200000000};
 				// nanosleep(&sl2,0);
+			#endif
 				break;
 			// case 27://ESC
 			// 	goto exit;
@@ -167,7 +211,7 @@ int main(void){
 		{
 			i2 pad_wh= {7,7};
 			i2 pad_o= sdim-pad_wh-3;
-			u32* l[7]= {
+			wch* l[7]= {
 				L"  ┌─┐  ",
 				L"  │↑│  ",
 				L"┌─┼─┼─┐",
@@ -189,11 +233,11 @@ int main(void){
 					"  ddd  ",
 					"  ddd  "};
 				char in_k= kmap_dpad[dp.y][dp.x];
-				i2* p= &ships[0].p;
-				if(in_k=='u') *p+= (i2){ 0, 1};
-				if(in_k=='l') *p+= (i2){-1, 0};
-				if(in_k=='r') *p+= (i2){ 1, 0};
-				if(in_k=='d') *p+= (i2){ 0,-1};
+				
+				if(in_k=='u') act(ACT_U);//allow multiple
+				if(in_k=='l') act(ACT_L);
+				if(in_k=='r') act(ACT_R);
+				if(in_k=='d') act(ACT_D);
 			}
 		}
 
@@ -203,6 +247,13 @@ int main(void){
 		}
 		
 		refresh();
+
+		//net
+		// qnd, quantum nondeterminism
+		// clients torrent stochastic updates to stochastic recipients
+		// hacking false updates is game balanced via trust scalar
+		//   trusted clients may choose to expend trust
+		// gateway is a subdir-mounted ftp
 
 		//timing
 		tp= now;
