@@ -8,7 +8,7 @@ flags_rls:= -O3 -gmlt
 flags_dbg:= -O1 -g3
 
 .PRECIOUS: A
-.PHONY: A
+.PHONY: A colorcount
 
 A: a.c
 	clang a.c -o A $(flags) $(flags_dbg)\
@@ -16,3 +16,6 @@ A: a.c
 	chmod +x A
 	#gdb -q ./A -x ./gdb.cfg -ex run
 	./A
+
+colorcount:
+	printf '%s\n' '#include <stdio.h>' '#include <ncursesw/ncurses.h>' 'int main(){initscr();start_color();printf("%d %d %d\n",COLORS,COLOR_PAIRS,can_change_color());endwin(); return 0;}' | clang -xc - -L$PREFIX/lib -I$PREFIX/include -lncursesw -o x

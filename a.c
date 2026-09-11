@@ -9,6 +9,7 @@
 #include <locale.h>
 #include <stddef.h>
 
+
 #define let(x) if(1;x)
 #define ra(   i,n) for(int i=0; i <  n; i++)
 #define ra2(i,a,b) for(int i=a; i <  b; i++)
@@ -54,6 +55,14 @@ inline i64 rand(){
 	rand_s= r;
 	rer; }
 
+
+
+
+// #define RGB32
+const u64 tdt= 150*msec;//target dt
+
+
+
 i2 sdim;//screen dimension
 i2 view= {0,0};
 
@@ -61,37 +70,47 @@ typedef u32 rgb;
 
 //todo contain
 static short rgbpair(rgb fg, rgb bg){
-	static short color = 16;
-	static short pair  =  8;
-	short fc = color++;
-	short bc = color++;
-	init_color(fc,
-		((fg >> 16) & 0xff) * 1000 / 255,
-		((fg >>  8) & 0xff) * 1000 / 255,
-		( fg        & 0xff) * 1000 / 255);
-	init_color(bc,
-		((bg >> 16) & 0xff) * 1000 / 255,
-		((bg >>  8) & 0xff) * 1000 / 255,
-		( bg        & 0xff) * 1000 / 255);
+	static short pair  = 16;
+	#if RGB32
+		static short color = 16;
+		short fc = color++;
+		short bc = color++;
+		init_color(fc,((fg >> 16) & 0xff)*1000/255,
+									((fg >>  8) & 0xff)*1000/255,
+									( fg        & 0xff)*1000/255);
+		init_color(bc,((bg >> 16) & 0xff)*1000/255,
+									((bg >>  8) & 0xff)*1000/255,
+									( bg        & 0xff)*1000/255);
+	#else
+		short fc=	    ((fg >> 16) & 0xff)*   6/255*36+
+			            ((fg >>  8) & 0xff)*   6/255*6 +
+			            ( fg        & 0xff)*   6/255   +16;
+		short bc=	    ((bg >> 16) & 0xff)*   6/255*36+
+			            ((bg >>  8) & 0xff)*   6/255*6 +
+			            ( bg        & 0xff)*   6/255   +16;
+	#endif
 	init_pair(pair, fc, bc);
 	re pair++;}
-cch* cchgen(cch* r, wch* c, rgb fg, rgb bg, bool bold, bool underline){
+static void cchgen(cch* r, wch* c, rgb fg, rgb bg, bool bold, bool underline){
 	attr_t a = 0;
-	if(bold     ) a |= A_BOLD;
-	if(underline) a |= A_UNDERLINE;
-	setcchar(r, c, a, rgbpair(fg, bg), NULL);
-	rer;}
+	if(bold     )  a |= A_BOLD;
+	if(underline)  a |= A_UNDERLINE;
+	short p= rgbpair(fg,bg);
+	setcchar(r,c, a,p, NULL);}
+#define CAO(p) attron(COLOR_PAIR(p))
+char* dbgp= "init";
+i64 dbgdur=0;
+void bad(char* s){ dbgp= s; dbgdur= 120; }
 
-void bad(char* s){}
 typedef struct{u64 h; u64 l;} uid;
 uid genuid(){ re (uid){rand(),rand()}; };
 
 
 typedef u64 etyp;
-cst etyp etyp_ship= 0;
-cst etyp etyp_misl= 1;
-cst etyp etyp_figt= 2;
-cst etyp etyp_sttn= 4;
+cst etyp etyp_ship= 0b0001;
+cst etyp etyp_misl= 0b0010;
+cst etyp etyp_figt= 0b0100;
+cst etyp etyp_sttn= 0b1000;
 
 //cannot create more units- starcraft style
 etyp ccmu_mask= 0;
@@ -99,23 +118,35 @@ void ccmu(etyp v){
 	ccmu_mask|= v;
 	bad("cant more entity"); }
 
-#define E(T,MAX,D,I) \
+#define E(T,MAX,D) \
   typedef struct D T;\
   cst u64 T##_MAX= MAX;\
   T  T##s[MAX];\
   T* T##s_end= T##s;\
   T* T##s_cap= T##s+MAX;\
-  T* init_##T(){ \
+  T* aloc_##T(){ \
 	  if(T##s_end>=T##s_cap){\
 		  ccmu(etyp_##T); T##s_end--; }\
-	  re T##s_end++;}
+	  re T##s_end++;}\
+
 #define ea(E,T) for(T* E=T##s; E!=T##s_end; E++)
 
 //opt via rearranger phase
 E(ship,0xffffe,{
-	uid id;         i2 p;  i32 h;  i32 c; i32 m;    cch s;},({
-	   .id=genuid(),  .p=0,   .h=16,  .c=0,  .m= 255,
-	    .s= cchgen(&.s,L"A",0xeeeeee,0x000000,1,0) }));
+   uid id;
+    i2 p;
+	 i32 hp;
+	 i32 cd;
+	 i32 m;
+   cch s;
+});
+
+void init_ships(){
+	ra(i,7){
+	  ship* s= aloc_ship();
+	  *s= (ship){ .id=genuid(),.p=0,.hp=16,.cd=0,.m= 255 };
+	  cchgen(&s->s,L"A",0xeeeeee,0x000000,0,0);
+	  s->p= (i2){i*2-8,i%2*3}; }}
 //fix palletize cchars
 // E(misl,{ i2 p; i32 h; })
 i64 tick;
@@ -142,7 +173,7 @@ static void draw(i2 m, cch* c){
 }
 
 int main(void){
-	setlocale(LC_ALL, "C.utf8");
+	setlocale(LC_ALL, "");//ncurses converts wstrings into user locale
 	initscr();
 	noecho();
 	cbreak();
@@ -152,22 +183,27 @@ int main(void){
 	mouseinterval(0);
 	nodelay(stdscr,1);
 	set_escdelay(0);
+	#if RGB32
+		if(!can_change_color())
+			bad("no rgb32 support");
+		else
+	#endif
 	start_color();
 
 	//palette
-	init_pair(1, COLOR_WHITE, COLOR_BLACK);
-	attron(1);
-	wbkgd(stdscr, COLOR_PAIR(1)|'.');//fill
+	#define CATR(s,f,g) int s= rgbpair(f,g);
+  CATR(  atrbase, 0xfafafa,0x020202);
+  CATR(atrheader, 0x000000,0x00ee00);
+	CATR(  atrbutn, 0x111111,0x444444);
+  CAO(atrbase);
+	wbkgd(stdscr, COLOR_PAIR(atrbase)|'.');//fill
 
 	//init
 	getmaxyx(stdscr,sdim.y,sdim.x);
-	ra(i,8)
-		init_ship();
-		
+  init_ships();	
 	
 
 	//timing
-	const u64 tdt= 150*msec;//target dt
 	t0= now_us();//init
 	now= 0;//most recent
 	u64 tp= 0;//previous
@@ -209,6 +245,7 @@ int main(void){
 		}
 
 		{
+			attron(atrbutn);
 			i2 pad_wh= {7,7};
 			i2 pad_o= sdim-pad_wh-3;
 			wch* l[7]= {
@@ -243,7 +280,14 @@ int main(void){
 
 		//entities
 		ea(s,ship){
+			CAO(atrbase);
 			draw(s->p,&s->s);
+		}
+		
+		//header
+		if(dbgdur-->0){
+			CAO(atrheader);
+		  mvaddstr(0,0,dbgp);
 		}
 		
 		refresh();
