@@ -177,11 +177,12 @@ int main(void){
 	initscr();
 	noecho();
 	cbreak();
-	timeout(0);
+	timeout(false);
 	curs_set(0);
 	mousemask(ALL_MOUSE_EVENTS,NULL);//REPORT_MOUSE_POSITION todo mobile dichot
-	mouseinterval(1);
-	nodelay(stdscr,1);
+	mouseinterval(0);
+	nodelay(stdscr,true);//cin block
+	immedok(stdscr,false);//attempt force draw buffer
 	set_escdelay(0);
 	noqiflush();
 	#if RGB32
@@ -199,6 +200,7 @@ int main(void){
   CAO(atrbase);
   char bgch= '.';
   wbkgd(stdscr, COLOR_PAIR(atrbase)|bgch);//fill
+  erase();
 
 	//init
 	getmaxyx(stdscr,sdim.y,sdim.x);
@@ -279,8 +281,16 @@ int main(void){
 		}
 
 		//entities
+		CAO(atrbase);
 		ea(s,ship){
-			CAO(atrbase);
+			i2 sv;
+			switch(rand()&3){
+				case 0: sv= (i2){ 0,0}; break;
+				case 1: sv= (i2){ 1,0}; break;
+				case 2: sv= (i2){-1,0}; break;
+				default:sv= 0;
+			}
+			s->p+= sv;
 			draw(s->p,&s->s);
 		}
 		
@@ -290,13 +300,14 @@ int main(void){
 		  mvaddstr(0,0,dbgp);
 		}
 		
-		refresh();//opt make guis windows to avoid redraw
+		doupdate();
+		//opt make guis windows to avoid redraw
 		//redraw warm before timer
+		erase();//this fucker is causing a flush
 		getmaxyx(stdscr,sdim.y,sdim.x);
-		// erase(); erase is incompatable with bg chars
-		// manual erase ohmygodbruhwhatdafuqman
-		move(0,0);
+		//bg draw
   //   CAO(atrbase);
+		// move(0,0);
 		// ra(y,sdim.y) ra(x,sdim.x)
 		// 	addch(bgch);
 		
@@ -306,6 +317,8 @@ int main(void){
 		// hacking false updates is game balanced via trust scalar
 		//   trusted clients may choose to expend trust
 		// gateway is a subdir-mounted ftp
+		//
+		// jamming and countermeasures cause client to stop emitting packets for veiled entities
 
 		//timing
 		tp= now;
