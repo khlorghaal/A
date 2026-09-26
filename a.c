@@ -180,9 +180,10 @@ int main(void){
 	timeout(0);
 	curs_set(0);
 	mousemask(ALL_MOUSE_EVENTS,NULL);//REPORT_MOUSE_POSITION todo mobile dichot
-	mouseinterval(0);
+	mouseinterval(1);
 	nodelay(stdscr,1);
 	set_escdelay(0);
+	noqiflush();
 	#if RGB32
 		if(!can_change_color())
 			bad("no rgb32 support");
@@ -196,7 +197,8 @@ int main(void){
   CATR(atrheader, 0x000000,0x00ee00);
 	CATR(  atrbutn, 0x111111,0x444444);
   CAO(atrbase);
-	wbkgd(stdscr, COLOR_PAIR(atrbase)|'.');//fill
+  char bgch= '.';
+  wbkgd(stdscr, COLOR_PAIR(atrbase)|bgch);//fill
 
 	//init
 	getmaxyx(stdscr,sdim.y,sdim.x);
@@ -209,8 +211,6 @@ int main(void){
 	u64 tp= 0;//previous
 	//monad
 	while(1){
-		getmaxyx(stdscr,sdim.y,sdim.x);
-		erase();
 		
 		//input
 		i2 mau= {0,0};
@@ -290,8 +290,16 @@ int main(void){
 		  mvaddstr(0,0,dbgp);
 		}
 		
-		refresh();
-
+		refresh();//opt make guis windows to avoid redraw
+		//redraw warm before timer
+		getmaxyx(stdscr,sdim.y,sdim.x);
+		// erase(); erase is incompatable with bg chars
+		// manual erase ohmygodbruhwhatdafuqman
+		move(0,0);
+  //   CAO(atrbase);
+		// ra(y,sdim.y) ra(x,sdim.x)
+		// 	addch(bgch);
+		
 		//net
 		// qnd, quantum nondeterminism
 		// clients torrent stochastic updates to stochastic recipients
