@@ -1,14 +1,12 @@
-#include <wchar.h>
-#define NCURSES_WIDECHAR 1
-#include <ncursesw/ncurses.h>
+#include "deps/termbox2/termbox2.h"
 #include <time.h>
 #include <stdint.h>
-// #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <locale.h>
 #include <stddef.h>
-
+#include <wchar.h>
+#include <stdio.h>
 
 #define let(x) if(1;x)
 #define ra(   i,n) for(int i=0; i <  n; i++)
@@ -28,7 +26,7 @@ typedef uint64_t u64;
 typedef  int32_t i32;
 typedef uint32_t u32;
 typedef  wchar_t wch;//always nullterm string because utf combining
-typedef  cchar_t cch;//cell with format
+
 inline static bool all(i2 v){ re   v.x & v.y; }
 inline static bool any(i2 v){ re   v.x | v.y; }
 
@@ -48,7 +46,7 @@ static i64 now_us(void){
 }
 
 static volatile i64 rand_s= 0;
-inline i64 rand(){
+inline i64 hrng(){
 	i64 s= rand_s;
 	i64 r=  s*0x5E747531573B1BULL;
 	r= (r>>7)^0x73513E1B7117B3ULL;
@@ -68,42 +66,19 @@ i2 view= {0,0};
 
 typedef u32 rgb;
 
-//todo contain
-static short rgbpair(rgb fg, rgb bg){
-	static short pair  = 16;
-	#if RGB32
-		static short color = 16;
-		short fc = color++;
-		short bc = color++;
-		init_color(fc,((fg >> 16) & 0xff)*1000/255,
-									((fg >>  8) & 0xff)*1000/255,
-									( fg        & 0xff)*1000/255);
-		init_color(bc,((bg >> 16) & 0xff)*1000/255,
-									((bg >>  8) & 0xff)*1000/255,
-									( bg        & 0xff)*1000/255);
-	#else
-		short fc=	    ((fg >> 16) & 0xff)*   6/255*36+
-			            ((fg >>  8) & 0xff)*   6/255*6 +
-			            ( fg        & 0xff)*   6/255   +16;
-		short bc=	    ((bg >> 16) & 0xff)*   6/255*36+
-			            ((bg >>  8) & 0xff)*   6/255*6 +
-			            ( bg        & 0xff)*   6/255   +16;
-	#endif
-	init_pair(pair, fc, bc);
-	re pair++;}
-static void cchgen(cch* r, wch* c, rgb fg, rgb bg, bool bold, bool underline){
-	attr_t a = 0;
-	if(bold     )  a |= A_BOLD;
-	if(underline)  a |= A_UNDERLINE;
-	short p= rgbpair(fg,bg);
-	setcchar(r,c, a,p, NULL);}
-#define CAO(p) attron(COLOR_PAIR(p))
-char* dbgp= "init";
-i64 dbgdur=0;
-void bad(char* s){ dbgp= s; dbgdur= 120; }
+/*
+ * Notcurses has a plane base cell. Unlike ncurses erase(), ncplane_erase()
+ * does not alter the base cell. Thus the '.' background is established once
+ * here and each frame can simply erase the plane to that base cell.
+ */
+static void set_style(struct ncplane* n, rgb fg, rgb bg, unsigned styles){
+	ncplane_set_fg_rgb(n, fg);
+	ncplane_set_bg_rgb(n, bg);
+	ncplane_set_styles(n, styles);
+}
 
 typedef struct{u64 h; u64 l;} uid;
-uid genuid(){ re (uid){rand(),rand()}; };
+uid genuid(){ re (uid){hrng(),hrng()}; };
 
 
 typedef u64 etyp;
@@ -167,35 +142,45 @@ void act(u16 a){
 		case (ACT_D): *p+= (i2){ 0,-1}; break;
 }}
 
-static void draw(i2 m, cch* c){
-	i2 v= m-view+sdim/2;
-	mvadd_wch(v.y,v.x,c);
+static void draw(struct ncplane* n, i2 m, wch c){
+	i2 v=m-view+sdim/2;
+	ncplane_putwc_yx(n,v.y,v.x,c);
 }
 
+char* dbgp="init";
+i64 dbgdur=0;
+void bad(char* s){ dbgp=s; dbgdur=120; }
+
 int main(void){
-	setlocale(LC_ALL, "");//ncurses converts wstrings into user locale
-	initscr();
-	noecho();
-	cbreak();
-	timeout(false);
-	curs_set(0);
-	mousemask(ALL_MOUSE_EVENTS,NULL);//REPORT_MOUSE_POSITION todo mobile dichot
-	mouseinterval(0);
-	nodelay(stdscr,true);//cin block
-	immedok(stdscr,false);//attempt force draw buffer
-	set_escdelay(0);
-	noqiflush();
-	#if RGB32
-		if(!can_change_color())
-			bad("no rgb32 support");
-		else
-	#endif
-	start_color();
+	setlocale(LC_ALL,"");
+
+	struct notcurses_options opts={0};
+	opts.flags=NCOPTION_SUPPRESS_BANNERS;
+	struct notcurses* nc=notcurses_core_init(&opts,stdout);
+	if(!nc)
+		return 1;
+
+	struct ncplane* std=notcurses_stdplane(nc);
+	notcurses_mice_enable(nc, true);
+	unsigned rows, cols;
+	ncplane_dim_yx(std,&rows,&cols);
+	sdim=(i2){(int)rows,(int)cols};
+
+	/*
+	 * Plane base cell replaces the ncurses wbkgd()+erase() combination.
+	 * ncplane_erase() restores cells to this base cell without changing it.
+	 */
+	ncplane_set_base(std,".",0,NCCHANNELS_INITIALIZER(0x000000,0x020202));
+	ncplane_erase(std);
+
+	set_style(std,0xfafafa,0x020202,0);
+
+	if(!can_change_color())
+		bad("no rgb32 support");
 
 	//palette
-	#define CATR(s,f,g) int s= rgbpair(f,g);
-  CATR(  atrbase, 0xfafafa,0x020202);
-  CATR(atrheader, 0x000000,0x00ee00);
+    CATR(  atrbase, 0xfafafa,0x020202);
+    CATR(atrheader, 0x000000,0x00ee00);
 	CATR(  atrbutn, 0x111111,0x444444);
   CAO(atrbase);
   char bgch= '.';
@@ -204,8 +189,8 @@ int main(void){
 
 	//init
 	getmaxyx(stdscr,sdim.y,sdim.x);
-  init_ships();	
-	
+	init_ships();
+    	
 
 	//timing
 	t0= now_us();//init
@@ -215,34 +200,31 @@ int main(void){
 	while(1){
 		
 		//input
-		i2 mau= {0,0};
-		
-		int ch= 0;
-		while((ch=getch())!=ERR){
-			switch(ch){
-			case KEY_MOUSE:
-				MEVENT m;
-			if(getmouse(&m)!=OK)
-					break;
-				mau= (i2){m.x,m.y};
-				break;
-			i2* p= &ships[0].p;
-				case KEY_UP   : act(ACT_U); break;
-				case KEY_LEFT : act(ACT_L); break;
-				case KEY_RIGHT: act(ACT_R); break;
-				case KEY_DOWN : act(ACT_D); break;
-			default:
-			#ifdef DBG_KBD
-			//seq dbg
-				// mvprintw(0, 0, "ch= %d 0x%x", ch, ch);
-				// struct timespec sl2= {0,200000000};
-				// nanosleep(&sl2,0);
-			#endif
-				break;
-			// case 27://ESC
-			// 	goto exit;
+		i2 mau={0,0};
+		struct timespec ts={0,0};
+		struct ncinput ni;
 
-			// default: break;
+		/* Nonblocking input. Drain everything currently available. */
+		while(notcurses_get(nc,&ts,&ni)==0){
+			switch(ni.id){
+				case NCKEY_UP: act(ACT_U); break;
+				case NCKEY_LEFT: act(ACT_L); break;
+				case NCKEY_RIGHT: act(ACT_R); break;
+				case NCKEY_DOWN: act(ACT_D); break;
+				case NCKEY_BUTTON1:
+					mau=(i2){ni.x,ni.y};
+					break;
+				case NCKEY_EOF:
+					notcurses_stop(nc);
+					return 0;
+				default:
+					#ifdef DBG_KBD
+					//seq dbg
+						// mvprintw(0, 0, "ch= %d 0x%x", ch, ch);
+						// struct timespec sl2= {0,200000000};
+						// nanosleep(&sl2,0);
+					#endif
+					break;
 			}
 		}
 
@@ -250,7 +232,7 @@ int main(void){
 			attron(atrbutn);
 			i2 pad_wh= {7,7};
 			i2 pad_o= sdim-pad_wh-3;
-			wch* l[7]= {
+			static const wch* l[7]= {
 				L"  ┌─┐  ",
 				L"  │↑│  ",
 				L"┌─┼─┼─┐",
@@ -258,16 +240,18 @@ int main(void){
 				L"└─┼─┼─┘",
 				L"  │↓│  ",
 				L"  └─┘  "};
+
+			set_style(std,0x111111,0x444444,0);
 			ra(i,7)
-				mvaddwstr( pad_o.y+i,pad_o.x,l[i]);
-				
+				ncplane_putwstr_yx(std,pad_o.y+i,pad_o.x,l[i]);
+			
 			i2 dp= mau-pad_o;
 			if(isbound(dp, 0,pad_wh)){
-				char kmap_dpad[7][8]= {//8 as null
+				static const char kmap_dpad[7][8]= {//8 as null
 					"  uuu  ",
 					"  uuu  ",
 					"ll   rr",
-          "ll   rr",
+					"ll   rr",
 					"ll   rr",
 					"  ddd  ",
 					"  ddd  "};
@@ -281,10 +265,9 @@ int main(void){
 		}
 
 		//entities
-		CAO(atrbase);
 		ea(s,ship){
 			i2 sv;
-			switch(rand()&3){
+			switch(hrng()&3){
 				case 0: sv= (i2){ 0,0}; break;
 				case 1: sv= (i2){ 1,0}; break;
 				case 2: sv= (i2){-1,0}; break;
@@ -297,17 +280,10 @@ int main(void){
 		//header
 		if(dbgdur-->0){
 			CAO(atrheader);
-		  mvaddstr(0,0,dbgp);
+			ncplane_putstr_yx(std,0,0,dbgp);
 		}
 		
-		doupdate();
-		//opt make guis windows to avoid redraw
-		//redraw warm before timer
-		erase();//this fucker is causing a flush
-		getmaxyx(stdscr,sdim.y,sdim.x);
 		//bg draw
-  //   CAO(atrbase);
-		// move(0,0);
 		// ra(y,sdim.y) ra(x,sdim.x)
 		// 	addch(bgch);
 		
@@ -320,6 +296,18 @@ int main(void){
 		//
 		// jamming and countermeasures cause client to stop emitting packets for veiled entities
 
+		/*
+		 * This is the sole physical-display commit.
+		 * All plane modifications above remain virtual until here.
+		 */
+		notcurses_render(nc);
+
+		/* Start the next frame from the plane's base '.' cell. */
+		ncplane_erase(std);
+
+		unsigned nr,nc0;
+		ncplane_dim_yx(std,&nr,&nc0);
+		sdim=(i2){(int)nr,(int)nc0};
 		//timing
 		tp= now;
 		now= now_us();
@@ -334,6 +322,7 @@ int main(void){
 	}
 
 exit:
-	endwin();
-	re 0;
+	notcurses_stop(nc);
+	return 0;
 }
+
