@@ -12,7 +12,7 @@ flags_dbg:= -O1 -g3
 
 A: a.c
 	clang a.c -o A $(flags) $(flags_dbg)\
-	 --std=c23 -lncursesw
+	 --std=c23 
 	chmod +x A
 	#gdb -q ./A -x ./gdb.cfg -ex run
 	./A
