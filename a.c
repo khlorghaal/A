@@ -76,7 +76,7 @@ i2 view= {0,0};
 cst rgb col_base_fg=0xfafafa;
 cst rgb col_base_bg=0x020202;
 cst rgb col_dpad_fg=0x111111;
-cst rgb col_dpad_bg=0x444444;
+cst rgb col_dpad_bg=0x222222;
 cst rgb col_dbg_fg =0x000000;
 cst rgb col_dbg_bg =0x00ee00;
 cst rgb col_ship_bg=0xeeeeee;
@@ -209,24 +209,24 @@ int main(void){
 		}
 
 		{
-			i2 pad_wh= {16,16};
-			i2 pad_o= sdim-pad_wh-3;
-			static char const*const l[16]= {
-				"    ┌───┐    ","    uuuuu    ",
-				"    │↑↑↑│    ","    uuuuu    ",
-				"    │↑↑↑│    ","    uuuuu    ",
-				"    │↑↑↑│    ","    uuuuu    ",
-				"┌───┼───┼───┐","llll     rrrr",
-				"│←←←│   │→→→│","llll     rrrr",
-				"│←←←│   │→→→│","llll     rrrr",
-				"│←←←│   │→→→│","llll     rrrr",
-				"└───┼───┼───┘","llll     rrrr",
-				"    │↓↓↓│    ","    ddddd    ",
-				"    │↓↓↓│    ","    ddddd    ",
-				"    │↓↓↓│    ","    ddddd    ",
-				"    └───┘    ","    ddddd    "};
+			static char const*const l[16*2]= {
+				"      ┌─────┐      ","      uuuuuuu      ",
+				"      │↑↑↑↑↑│      ","      uuuuuuu      ",
+				"      │↑↑↑↑↑│      ","      uuuuuuu      ",
+				"      │↑↑↑↑↑│      ","      uuuuuuu      ",
+				"┌─────┼─────┼─────┐","llllll uuuuu rrrrrr",
+				"│←←←←←│     │→→→→→│","lllllll     rrrrrrr",
+				"│←←←←←│     │→→→→→│","lllllll     rrrrrrr",
+				"│←←←←←│     │→→→→→│","lllllll     rrrrrrr",
+				"└─────┼─────┼─────┘","llllll ddddd rrrrrr",
+				"      │↓↓↓↓↓│      ","      ddddddd      ",
+				"      │↓↓↓↓↓│      ","      ddddddd      ",
+				"      │↓↓↓↓↓│      ","      ddddddd      ",
+				"      └─────┘      ","      ddddddd      "};
+			const i2 pad_wh= {strlen(l[0]),16};
+			const i2 pad_o= sdim-pad_wh-3;
 
-			ra(i,7)
+			ra(i,pad_wh.y)
 					tb_print(pad_o.x,pad_o.y+i,	col_dpad_fg,col_dpad_bg, l[i*2]);
 			
 			i2 dp= mau-pad_o;
