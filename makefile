@@ -1,21 +1,30 @@
-flags = -Wno-parentheses -Wno-ambiguous-reversed-operator -Wno-string-compare\
- -Werror=return-stack-address -Werror=uninitialized -Werror=shift-negative-value\
- -I"./deps/" -L"./deps"\
- -ferror-limit=4 -fcaret-diagnostics-max-lines=4\
- -fsanitize=shift 
- #-fsanitize=address
-flags_rls:= -O3 -gmlt
-flags_dbg:= -O1 -g3
+NIM ?= nim
+NIMFLAGS ?=
 
-.PRECIOUS: A
-.PHONY: A colorcount
+.PHONY: all run check test clean c-run colorcount
+all: build/A
 
-A: a.c
-	clang a.c -o A $(flags) $(flags_dbg)\
-	 --std=c23 
-	chmod +x A
-	#gdb -q ./A -x ./gdb.cfg -ex run
-	./A
+build/A: a.nim termbox.nim native/termbox.c native/termbox.h deps/termbox2/termbox2.h
+	mkdir -p build
+	$(NIM) c $(NIMFLAGS) --out:$@ a.nim
 
-colorcount:
-	printf '%s\n' '#include <stdio.h>' '#include <ncursesw/ncurses.h>' 'int main(){initscr();start_color();printf("%d %d %d\n",COLORS,COLOR_PAIRS,can_change_color());endwin(); return 0;}' | clang -xc - -L$PREFIX/lib -I$PREFIX/include -lncursesw -o x
+run: build/A
+	./build/A
+
+check:
+	$(NIM) check $(NIMFLAGS) a.nim
+	$(NIM) check $(NIMFLAGS) p2p.nim
+
+test:
+	mkdir -p build
+	$(NIM) c $(NIMFLAGS) -d:aTests --out:build/game-checks -r a.nim
+
+# Keep the original C implementation available for comparison.
+# It has pre-existing Clang extensions and excess pad initializers.
+c-run:
+	mkdir -p build
+	clang -std=c2x -O1 -g a.c -o build/A-c
+	./build/A-c
+
+clean:
+	rm -rf build
