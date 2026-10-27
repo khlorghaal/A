@@ -65,8 +65,7 @@ proc initNet*(selph: PeerInfo, seed: int64): Net =
   doAssert selph.id != 0
   Net(selph: selph, rng: initRand(seed), pingLimit: 2000)
 
-proc register*(n: var Net, id: KindId,
-               dropOld = false, once = false): Kind =
+proc register*(n: var Net, id: KindId, dropOld, once: bool = false): Kind =
   doAssert id notin n.kinds
   result = Kind(id: id, dropOld: dropOld, once: once)
   n.kinds[id] = result

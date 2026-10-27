@@ -9,6 +9,8 @@ type
     state     : bool
     confidence: float32
 
+  Influence = tuple[bytes: seq[byte], w: float64]
+
   Report = object
     revision: uint64
     time    : float64
@@ -17,6 +19,7 @@ type
   Sync* = object
     kind*  : Kind
     owners*: Table[Uid, PeerId]
+    # Keep revision watermarks after reports expire.
     reports: Table[tuple[source: PeerId, entity: Uid], Report]
     keys   : Table[uint64, Uid]
     serial : uint64
@@ -37,9 +40,13 @@ proc `+=`*(a: var sync_v2, b: sync_v2) = a = a + b
 proc initSync*(n: var Net, kind: KindId): Sync =
   Sync(kind: n.register(kind, dropOld = true), rate: 8, ttl: 2)
 
+func finite(x: SomeFloat): bool =
+  classify(x) notin {fcNan, fcInf, fcNegInf}
+
 func weight*(s: Sync, source: PeerId, entity: Uid, trust: float32): float32 =
-  let bonus = if source != 0 and s.owners.getOrDefault(entity) == source: 0.5'f32 else: 0'f32
-  if classify(trust) in {fcNan, fcInf, fcNegInf}: return 0
+  if not finite(trust): return 0
+  let owns = source != 0 and s.owners.getOrDefault(entity) == source
+  let bonus = if owns: 0.5'f32 else: 0'f32
   max(0'f32, trust + bonus)
 
 proc put(bytes: var seq[byte], value: uint64, count: int) =
@@ -50,15 +57,28 @@ proc get(bytes: seq[byte], at: var int, count: int): uint64 =
   for i in 0..<count: result = result or (uint64(bytes[at + i]) shl (i*8))
   at += count
 
+proc put(bytes: var seq[byte], value: float32) =
+  bytes.put(cast[uint32](value), 4)
+
+proc getFloat(bytes: seq[byte], at: var int): float32 =
+  result = cast[float32](uint32(bytes.get(at, 4)))
+  if not finite(result):
+    raise newException(ValueError, "nonfinite sync value")
+
+proc getBool(bytes: seq[byte], at: var int): bool =
+  let value = bytes.get(at, 1)
+  if value > 1: raise newException(ValueError, "invalid boolean")
+  value == 1
+
 proc encode[T](entity: T): seq[byte] =
   result.put(entity.id.h, 8)
   result.put(entity.id.l, 8)
   for _, field in fieldPairs(entity):
     when field is sync_v2:
-      result.put(cast[uint32](field.x), 4)
-      result.put(cast[uint32](field.y), 4)
+      result.put(field.x)
+      result.put(field.y)
     elif field is sync_f:
-      result.put(cast[uint32](float32(field)), 4)
+      result.put(float32(field))
     elif field is sync_b:
       result.put(uint64(ord(field.value)), 1)
 
@@ -67,21 +87,13 @@ proc decode[T](bytes: seq[byte], entity: var T) =
   entity.id = (bytes.get(at, 8), bytes.get(at, 8))
   for _, field in fieldPairs(entity):
     when field is sync_v2:
-      field = sv(cast[float32](uint32(bytes.get(at, 4))),
-                 cast[float32](uint32(bytes.get(at, 4))))
-      if classify(field.x) in {fcNan, fcInf, fcNegInf} or
-         classify(field.y) in {fcNan, fcInf, fcNegInf}:
-        raise newException(ValueError, "nonfinite position")
+      field = sv(bytes.getFloat(at), bytes.getFloat(at))
     elif field is sync_f:
-      let value = cast[float32](uint32(bytes.get(at, 4)))
-      if classify(value) in {fcNan, fcInf, fcNegInf}:
-        raise newException(ValueError, "nonfinite scalar")
-      field = sync_f(value)
+      field = sync_f(bytes.getFloat(at))
     elif field is sync_b:
-      let value = bytes.get(at, 1)
-      if value > 1: raise newException(ValueError, "invalid boolean")
-      field.set(value == 1)
-  if at != bytes.len: raise newException(ValueError, "sync schema mismatch")
+      field.set(bytes.getBool(at))
+  if at != bytes.len:
+    raise newException(ValueError, "sync schema mismatch")
 
 proc publish*[T](s: var Sync, entities: openArray[T]) =
   s.kind.row.setLen(0)
@@ -96,16 +108,19 @@ proc publish*[T](s: var Sync, entities: openArray[T]) =
 
 proc ingest[T](s: var Sync, entities: openArray[T]) =
   for receipt in s.kind.queue:
+    let d = receipt.datum
     var incoming: T
-    try: decode(receipt.datum.bytes, incoming)
+    try: decode(d.bytes, incoming)
     except ValueError: continue
-    let key = receipt.datum.key
+
+    let key = d.key
     if key notin s.keys or s.keys[key] != incoming.id: continue
+
     let index = (receipt.source, incoming.id)
-    if index in s.reports and receipt.datum.revision <= s.reports[index].revision:
+    if index in s.reports and d.revision <= s.reports[index].revision:
       continue
-    s.reports[index] = Report(revision: receipt.datum.revision,
-                              time: s.time, bytes: receipt.datum.bytes)
+
+    s.reports[index] = Report(revision: d.revision, time: s.time, bytes: d.bytes)
   s.kind.queue.setLen(0)
 
 func toward(a, b, alpha: float32): float32 =
@@ -123,30 +138,34 @@ proc blend[T](entity: var T, target: T, alpha: float32) =
       if a.confidence >= 0.6: a.state = true
       if a.confidence <= 0.4: a.state = false
 
+iterator influences(s: Sync, n: Net, entity: Uid): Influence =
+  for index, report in s.reports:
+    if index.entity != entity: continue
+    if s.time - report.time >= s.ttl: continue
+    let peer = n.peers.getOrDefault(index.source)
+    if peer.isNil or peer notin n.all: continue
+
+    let w = float64(s.weight(index.source, entity, peer.trust))
+    if w > 0: yield (report.bytes, w)
+
 proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
                    dt: float64, selfTrust = 0'f32) =
-  doAssert dt >= 0 and classify(dt) notin {fcNan, fcInf, fcNegInf}
+  doAssert dt >= 0 and finite(dt)
   s.time += dt
   s.ingest(entities)
 
-  # Retain the revision watermark even after a report expires.
   for entity in entities.mitems:
     var target = entity
     var total = 0.0
-    let resistance = 1 + float64(s.weight(n.selph.id, entity.id, selfTrust))
-    for index, report in s.reports:
-      if index.entity != entity.id or s.time - report.time >= s.ttl: continue
-      let peer = n.peers.getOrDefault(index.source)
-      if peer.isNil or peer notin n.all: continue
-      let w = float64(s.weight(index.source, entity.id, peer.trust))
-      if w <= 0: continue
+
+    for bytes, w in s.influences(n, entity.id):
       var incoming: T
-      decode(report.bytes, incoming)
-      # Weighted mean, then one exponential step: independent of packet count.
+      decode(bytes, incoming)
       total += w
       target.blend(incoming, float32(w/total))
 
     if total > 0:
-      let pull = float64(max(0'f32, s.rate))*total/resistance
+      let own = s.weight(n.selph.id, entity.id, selfTrust)
+      let pull = float64(max(0'f32, s.rate))*total/(1 + float64(own))
       let alpha = float32(1 - exp(-pull*dt))
       entity.blend(target, alpha)

@@ -67,13 +67,15 @@ proc debugHeader*(text: string) =
 proc draw*(m: sync_v2, c: Cell) =
   let x = m.x - view.x + float32(sdim.x div 2)
   let y = m.y - view.y + float32(sdim.y div 2)
-  if x < -1 or y < -1 or x >= float32(sdim.x) or y >= float32(sdim.y): return
-  let v = v(int32(round(x)), int32(round(y)))
+  if x < -1 or x >= float32(sdim.x): return
+  if y < -1 or y >= float32(sdim.y): return
+
+  let p = v(int32(round(x)), int32(round(y)))
   var cp: seq[uint32]
   for r in string(c.g).runes: cp.add uint32(r)
   if cp.len == 0: return
 
-  discard tb_set_cell_ex(v.x, v.y, addr cp[0], csize_t(cp.len), c.fg, c.bg)
+  discard tb_set_cell_ex(p.x, p.y, addr cp[0], csize_t(cp.len), c.fg, c.bg)
 
 const pad* = [ # paired display / hit map; widths are terminal columns
   "    ┌───┐    ", "    uuuuu    ",
@@ -105,4 +107,3 @@ proc drawPad*(mouse: i2, act: proc(a: Action)) =
   of 'r': act(actR)
   of 'd': act(actD)
   else: discard
-

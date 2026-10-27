@@ -32,9 +32,11 @@ var
   ships       : array[shipMax, Ship]
   shipsEnd    : int
 
-  localPeer = uint64(parseBiggestUInt(getEnv("A_PEER_ID", "1")))
-  net = initNet(PeerInfo(id: localPeer), 1)
+  localPeer   = getEnv("A_PEER_ID", "1").parseBiggestUInt.uint64
+  net         = initNet(PeerInfo(id: localPeer), 1)
   replication = initSync(net, 1)
+
+template liveShips: untyped = ships.toOpenArray(0, shipsEnd - 1)
 
 proc nowUs(): int64 = getMonoTime().ticks div 1000 - t0
 
@@ -84,8 +86,8 @@ proc stepShips(dt = 0.025) =
     of 1: ships[i].p += sv(-1, 0)
     else: discard
 
-  replication.reconcile(net, ships.toOpenArray(0, shipsEnd - 1), dt)
-  replication.publish(ships.toOpenArray(0, shipsEnd - 1))
+  replication.reconcile(net, liveShips, dt)
+  replication.publish(liveShips)
 
   view = ships[0].p
   for i in 0..<shipsEnd:
@@ -97,7 +99,7 @@ proc main(): int =
   defer: closeScreen()
 
   initShips()
-  replication.publish(ships.toOpenArray(0, shipsEnd - 1))
+  replication.publish(liveShips)
   t0 = nowUs()
   now = 0
   var previous = -tdt
@@ -106,6 +108,7 @@ proc main(): int =
     let started = nowUs()
     let dt = float64(started - previous)/float64(sec)
     previous = started
+
     if not gather.isNil: net.tick()
     screenSize()
     var mouse: i2 = v(-1,-1)
@@ -128,6 +131,7 @@ proc main(): int =
 
     drawPad(mouse, act)
     stepShips(dt)
+
     if dbgDur > 0:
       debugHeader(dbgp)
       dec dbgDur
