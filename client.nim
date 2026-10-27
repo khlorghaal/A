@@ -1,5 +1,6 @@
-import std/[os, unicode]
+import std/[os, unicode, math]
 import futhark
+from sync import sync_v2, sv
 
 const root = currentSourcePath().parentDir
 {.passC: "-I" & root.}
@@ -39,7 +40,8 @@ const
   colDbgFg   = 0x000000'u32
   colDbgBg   = 0x00ee00'u32
 
-var sdim*, view*: i2
+var sdim*: i2
+var view*: sync_v2
 
 proc initScreen*(): bool =
   if a_init_locale() == 0 or tb_init() != 0: return false
@@ -62,8 +64,11 @@ proc presentScreen*() =
 proc debugHeader*(text: string) =
   discard tb_print(0, 0, colDbgFg, colDbgBg, text.cstring)
 
-proc draw*(m: i2, c: Cell) =
-  let v = m - view + sdim div 2
+proc draw*(m: sync_v2, c: Cell) =
+  let x = m.x - view.x + float32(sdim.x div 2)
+  let y = m.y - view.y + float32(sdim.y div 2)
+  if x < -1 or y < -1 or x >= float32(sdim.x) or y >= float32(sdim.y): return
+  let v = v(int32(round(x)), int32(round(y)))
   var cp: seq[uint32]
   for r in string(c.g).runes: cp.add uint32(r)
   if cp.len == 0: return

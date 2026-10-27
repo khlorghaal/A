@@ -1,17 +1,17 @@
-import std/[monotimes, os]
+import std/[monotimes, os, tables, math, strutils]
+import p2p, sync
 import client
 
 type
-  Uid = tuple[h, l: uint64]
-
   Ship = object
-    id : Uid
-    p  : i2
-    hp : int32
-    cd : int32
-    msl: int32
-    chr: Grapheme
-    fac: rgb
+    id     : Uid
+    p      : sync_v2
+    trigger: sync_b
+    hp     : int32
+    cd     : int32
+    msl    : int32
+    chr    : Grapheme
+    fac    : rgb
 
 const
   usec =         1'i64
@@ -31,6 +31,10 @@ var
 
   ships       : array[shipMax, Ship]
   shipsEnd    : int
+
+  localPeer = uint64(parseBiggestUInt(getEnv("A_PEER_ID", "1")))
+  net = initNet(PeerInfo(id: localPeer), 1)
+  replication = initSync(net, 1)
 
 proc nowUs(): int64 = getMonoTime().ticks div 1000 - t0
 
@@ -62,22 +66,26 @@ proc initShips() =
     allocShip()[] = Ship(
       id : genUid(), hp: 16, cd: 0, msl: 255,
       chr: Grapheme("A"), fac: 0xeeeeee,
-      p  : (int32(i*2 - 8), int32(i mod 2*3)))
+      p  : sv(float32(i*2 - 8), float32(i mod 2*3)))
+    replication.owners[ships[i].id] = 1 # shared initial scenario, peer 1 owns it
 
 proc act(a: Action) =
   case a
-  of actU: ships[0].p += v( 0,-1)
-  of actL: ships[0].p += v(-1, 0)
-  of actR: ships[0].p += v( 1, 0)
-  of actD: ships[0].p += v( 0, 1)
-  of actF: discard
+  of actU: ships[0].p += sv( 0,-1)
+  of actL: ships[0].p += sv(-1, 0)
+  of actR: ships[0].p += sv( 1, 0)
+  of actD: ships[0].p += sv( 0, 1)
+  of actF: ships[0].trigger.set(not ships[0].trigger.value)
 
-proc stepShips() =
+proc stepShips(dt = 0.025) =
   for i in 0..<shipsEnd:
     case hrng() mod 5
-    of 0: ships[i].p += v( 1, 0)
-    of 1: ships[i].p += v(-1, 0)
+    of 0: ships[i].p += sv( 1, 0)
+    of 1: ships[i].p += sv(-1, 0)
     else: discard
+
+  replication.reconcile(net, ships.toOpenArray(0, shipsEnd - 1), dt)
+  replication.publish(ships.toOpenArray(0, shipsEnd - 1))
 
   view = ships[0].p
   for i in 0..<shipsEnd:
@@ -89,11 +97,16 @@ proc main(): int =
   defer: closeScreen()
 
   initShips()
+  replication.publish(ships.toOpenArray(0, shipsEnd - 1))
   t0 = nowUs()
   now = 0
+  var previous = -tdt
 
   while true:
     let started = nowUs()
+    let dt = float64(started - previous)/float64(sec)
+    previous = started
+    if not gather.isNil: net.tick()
     screenSize()
     var mouse: i2 = v(-1,-1)
     var ev: TbEvent
@@ -114,7 +127,7 @@ proc main(): int =
       else: discard
 
     drawPad(mouse, act)
-    stepShips()
+    stepShips(dt)
     if dbgDur > 0:
       debugHeader(dbgp)
       dec dbgDur

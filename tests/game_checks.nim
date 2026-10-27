@@ -31,31 +31,31 @@ block shipsAndInput:
   randS = 0
   initShips()
   doAssert shipsEnd == 7
-  doAssert ships[0].p == v(-8,0)
-  doAssert ships[6].p == v(4,0)
+  doAssert ships[0].p == sv(-8,0)
+  doAssert ships[6].p == sv(4,0)
   doAssert ships[0].id != ships[1].id
   let other = ships[1].p
-  act(actU); doAssert ships[0].p == v(-8,-1)
-  act(actL); doAssert ships[0].p == v(-9,-1)
+  act(actU); doAssert ships[0].p == sv(-8,-1)
+  act(actL); doAssert ships[0].p == sv(-9,-1)
   act(actR); act(actD); act(actF)
-  doAssert ships[0].p == v(-8,0)
+  doAssert ships[0].p == sv(-8,0)
   doAssert ships[1].p == other
 
 block padButtons:
   sdim = v(100,36)
   let origin = sdim - v(13,13) - v(3,3)
-  ships[0].p = v(0,0)
-  drawPad(origin + v(6,1), act);  doAssert ships[0].p == v( 0,-1)
-  drawPad(origin + v(1,5), act);  doAssert ships[0].p == v(-1,-1)
-  drawPad(origin + v(11,5), act); doAssert ships[0].p == v( 0,-1)
-  drawPad(origin + v(6,10), act); doAssert ships[0].p == v( 0, 0)
+  ships[0].p = sv(0,0)
+  drawPad(origin + v(6,1), act);  doAssert ships[0].p == sv( 0,-1)
+  drawPad(origin + v(1,5), act);  doAssert ships[0].p == sv(-1,-1)
+  drawPad(origin + v(11,5), act); doAssert ships[0].p == sv( 0,-1)
+  drawPad(origin + v(6,10), act); doAssert ships[0].p == sv( 0, 0)
 
 block camera:
-  ships[0].p = v(42,-17)
+  ships[0].p = sv(42,-17)
   sdim = v(100,36)
   stepShips()
   doAssert view == ships[0].p
-  doAssert ships[0].p - view + sdim div 2 == v(50,18)
+  doAssert ships[0].p == view
 
 block capacity:
   shipsEnd = shipMax

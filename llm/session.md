@@ -28,3 +28,5 @@ Game checks cover vector bounds, pad geometry, deterministic wrapping RNG, seven
 Header-import revision: native is now deps; docs is now llm. termbox.nim is a 12-line Futhark import module. Futhark 0.13.0 is pinned for Nim 1.6 compatibility; the newer compiler download was unavailable. Generated ABI, build, game assertions, semantic checks and a PTY mouse/exit smoke test passed. No push or PR.
 
 Client extraction: termbox.nim was renamed client.nim and now holds screen initialization/shutdown/presentation, cell drawing, pad GUI and debug-header printing. a.nim retains game state, input dispatch and debug lifetime.
+
+Typed synchronization: Ship.p is now sync_v2 (float coordinates), trigger is sync_b; sync.nim derives records from field types and bridges the P2P row/queue. Owners receive +0.5 trust for that entity; elapsed-time exponential blending and retained per-source reports prevent packet-rate amplification. Boolean confidence has 0.6/0.4 hysteresis. See synchronization.md for semantics and remaining transport/session work. No sockets are configured by default.
