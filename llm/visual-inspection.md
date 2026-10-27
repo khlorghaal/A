@@ -48,3 +48,6 @@ make check test all
 The scratch-only toolchain is not tracked. `A_FONT` overrides the capture font path. All binaries and captures go under ignored `build/`.
 
 Prepared tool terminal session: `56022` (100×36), waiting for JSON; game not started. Recreate it with the command above if the session is unavailable. A synthetic arrow/box-drawing/24-bit-color sample passed the renderer check; this does not establish that the game renders correctly.
+
+
+Header-import update: the current build requires Futhark 0.13.0 and Clang/libclang. In this scratch container add `/root/.nimble/bin`, `toolchain/bin` and `toolchain/usr/bin` to PATH, and `toolchain/usr/lib/x86_64-linux-gnu` to LD_LIBRARY_PATH (toolchain is `/workspace/scratch/8e756e99e038/toolchain`). See nim-port.md. The prior statement that the game was never run is historical; camera and input were subsequently checked in the PTY.

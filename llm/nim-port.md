@@ -2,10 +2,11 @@
 
 `a.nim` ports `a.c`, using the earlier Nim draft supplied in chat. `a.c` is retained as a reference. Network code remains separate in `p2p.nim`.
 
-Build with Nim 1.6.14 or newer, a C compiler, and the pinned termbox2 submodule:
+Build with Nim 1.6.14 or newer, a C compiler, Clang/libclang development files, and the pinned termbox2 submodule. Install the pinned Futhark dependency first:
 
 ```sh
 git submodule update --init
+nimble install -d
 make
 make test
 make check
@@ -27,3 +28,11 @@ Corrections made during port:
 - Truecolor is requested directly. The C fallback chain treated success (zero) as failure, potentially replacing the intended mode with grayscale. Termbox does not detect terminal truecolor support; use a truecolor terminal for inspection.
 
 After visual inspection, Up and Down were corrected to match screen coordinates. Ships use the base background so their A glyphs are visible. After movement, the view offset follows the local ship; its position projects to screen center. The local ship still participates in the existing random drift.
+
+## Header imports
+
+`termbox.nim` imports `deps/termbox.h` through Futhark 0.13.0 (pinned in a.nimble). It generates the event layout, constants and procedures from the configured C header at compile time. No handwritten Nim ABI declarations remain. The small C implementation and header live directly in deps; llm contains agent notes.
+
+The five key aliases in the C header expose expression macros as enum constants, which this Futhark release can evaluate. Their values remain defined by termbox2. Event field `type` is imported as `kind` to avoid a Nim keyword.
+
+Clang/libclang and Futhark are build-time dependencies; the game does not link libclang. Generated imports are cached under ignored build/nimcache. After editing a C header, use `make clean` to invalidate Futhark's header cache, or regenerate with `make NIMFLAGS="--nimcache:build/nimcache -d:opirRebuild"`.

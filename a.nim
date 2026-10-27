@@ -172,17 +172,17 @@ proc main(): int =
     var ev: TbEvent
 
     while tb_peek_event(addr ev, 0) == 0:
-      if ev.`type` == TB_EVENT_RESIZE:
+      if ev.kind == TB_EVENT_RESIZE:
         sdim = (ev.w, ev.h)
         continue
-      if ev.`type` notin [TB_EVENT_KEY, TB_EVENT_MOUSE]: continue
+      if ev.kind != TB_EVENT_KEY and ev.kind != TB_EVENT_MOUSE: continue
 
-      case ev.key
-      of TB_KEY_ARROW_UP   : act(actU)
-      of TB_KEY_ARROW_LEFT : act(actL)
-      of TB_KEY_ARROW_RIGHT: act(actR)
-      of TB_KEY_ARROW_DOWN : act(actD)
-      of TB_KEY_MOUSE_LEFT : mouse = (ev.x, ev.y)
+      case uint32(ev.key)
+      of keyUp   : act(actU)
+      of keyLeft : act(actL)
+      of keyRight: act(actR)
+      of keyDown : act(actD)
+      of keyClick: mouse = (ev.x, ev.y)
       of TB_KEY_CTRL_C, TB_KEY_ESC: return 0
       else: discard
 

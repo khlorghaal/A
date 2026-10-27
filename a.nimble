@@ -1,0 +1,5 @@
+version     = "0.1.0"
+author      = "khlorghaal"
+description = "A — a ship"
+license     = "GPL-3.0"
+requires "nim >= 1.6.14", "futhark == 0.13.0"

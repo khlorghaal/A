@@ -6,4 +6,4 @@ For important code use visual annealing: render, locate an awkward region of abo
 
 Use a.c as the behavioral baseline for the initial Nim port. The network module p2p.nim has external transport/policy contracts and is not yet wired into the game.
 
-See docs/session.md and docs/visual-references.md for continuation context. Keep uploaded reference images and machine-generated build/capture output out of Git.
+See llm/session.md and llm/visual-references.md for continuation context. Keep uploaded reference images and machine-generated build/capture output out of Git.
