@@ -3,3 +3,5 @@ A
 a
 a.out
 web/build
+nimcache/
+__pycache__/

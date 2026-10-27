@@ -18,3 +18,9 @@ Repository excludes transfer helpers, caches and uploaded reference images. Scra
 Project name: A is the glyph of a ship. Column alignment is an explicit style requirement.
 
 Current task: three local commits (notes/P2P, Nim game port, visual-inspection preparation). Do not push or open a PR yet. Preserve a.c behavior as baseline, using the user-supplied earlier Nim draft where useful. Stop before running the game so the user can switch to Terra.
+
+## Local implementation state
+
+Branch: work/nim-port, based on origin/master at 7fe52e3. No push or PR authorized yet. The user supplied the missing earlier Nim draft in chat; its useful data declarations and grapheme conversion were retained and corrected. a.nim now compiles; the termbox2 gitlink is initialized and its missing .gitmodules entry restored. p2p.nim is byte-identical to the latest session source and passes nim check.
+
+Game checks cover vector bounds, pad geometry, deterministic wrapping RNG, seven-ship initialization, input movement, allocation limits, Unicode width and monotonic timing. Read docs/nim-port.md for differences from a.c. The game itself has NOT been launched; stop here for the user to switch to Terra. docs/visual-inspection.md describes the prepared PTY, commands, environment and anticipated artifacts. Keep this pause distinct from the noninteractive tests already run.
