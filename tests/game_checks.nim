@@ -1,3 +1,5 @@
+import std/unicode
+
 # Included only with -d:aTests. These checks never initialize the terminal.
 doAssert sizeof(TbEvent) == 24
 doAssert a_init_locale() != 0
@@ -43,10 +45,10 @@ block padButtons:
   sdim = v(100,36)
   let origin = sdim - v(13,13) - v(3,3)
   ships[0].p = v(0,0)
-  drawPad(origin + v(6,1));  doAssert ships[0].p == v( 0,-1)
-  drawPad(origin + v(1,5));  doAssert ships[0].p == v(-1,-1)
-  drawPad(origin + v(11,5)); doAssert ships[0].p == v( 0,-1)
-  drawPad(origin + v(6,10)); doAssert ships[0].p == v( 0, 0)
+  drawPad(origin + v(6,1), act);  doAssert ships[0].p == v( 0,-1)
+  drawPad(origin + v(1,5), act);  doAssert ships[0].p == v(-1,-1)
+  drawPad(origin + v(11,5), act); doAssert ships[0].p == v( 0,-1)
+  drawPad(origin + v(6,10), act); doAssert ships[0].p == v( 0, 0)
 
 block camera:
   ships[0].p = v(42,-17)

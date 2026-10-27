@@ -31,8 +31,10 @@ After visual inspection, Up and Down were corrected to match screen coordinates.
 
 ## Header imports
 
-`termbox.nim` imports `deps/termbox.h` through Futhark 0.13.0 (pinned in a.nimble). It generates the event layout, constants and procedures from the configured C header at compile time. No handwritten Nim ABI declarations remain. The small C implementation and header live directly in deps; llm contains agent notes.
+`client.nim` imports `deps/termbox.h` through Futhark 0.13.0 (pinned in a.nimble). It generates the event layout, constants and procedures from the configured C header at compile time. No handwritten Nim ABI declarations remain. The small C implementation and header live directly in deps; llm contains agent notes.
 
 The five key aliases in the C header expose expression macros as enum constants, which this Futhark release can evaluate. Their values remain defined by termbox2. Event field `type` is imported as `kind` to avoid a Nim keyword.
 
 Clang/libclang and Futhark are build-time dependencies; the game does not link libclang. Generated imports are cached under ignored build/nimcache. After editing a C header, use `make clean` to invalidate Futhark's header cache, or regenerate with `make NIMFLAGS="--nimcache:build/nimcache -d:opirRebuild"`.
+
+The client module now owns terminal lifecycle, projection and grapheme drawing, pad GUI, and debug-header printing. The game supplies the pad action callback and retains ship state and message lifetime.

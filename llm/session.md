@@ -26,3 +26,5 @@ Branch: work/nim-port, based on origin/master at 7fe52e3. No push or PR authoriz
 Game checks cover vector bounds, pad geometry, deterministic wrapping RNG, seven-ship initialization, input movement, allocation limits, Unicode width and monotonic timing. Read llm/nim-port.md for differences from a.c. The game itself has NOT been launched; stop here for the user to switch to Terra. llm/visual-inspection.md describes the prepared PTY, commands, environment and anticipated artifacts. Keep this pause distinct from the noninteractive tests already run.
 
 Header-import revision: native is now deps; docs is now llm. termbox.nim is a 12-line Futhark import module. Futhark 0.13.0 is pinned for Nim 1.6 compatibility; the newer compiler download was unavailable. Generated ABI, build, game assertions, semantic checks and a PTY mouse/exit smoke test passed. No push or PR.
+
+Client extraction: termbox.nim was renamed client.nim and now holds screen initialization/shutdown/presentation, cell drawing, pad GUI and debug-header printing. a.nim retains game state, input dispatch and debug lifetime.

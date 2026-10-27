@@ -4,7 +4,7 @@ NIMFLAGS ?= --nimcache:build/nimcache
 .PHONY: all run check test clean c-run colorcount
 all: build/A
 
-build/A: a.nimble a.nim termbox.nim deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
+build/A: a.nimble a.nim client.nim deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
 	mkdir -p build
 	$(NIM) c $(NIMFLAGS) --out:$@ a.nim
 
