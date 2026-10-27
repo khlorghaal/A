@@ -26,4 +26,4 @@ Corrections made during port:
 - Absent mouse input uses an off-screen sentinel; resize events no longer stop draining the input queue.
 - Truecolor is requested directly. The C fallback chain treated success (zero) as failure, potentially replacing the intended mode with grayscale. Termbox does not detect terminal truecolor support; use a truecolor terminal for inspection.
 
-Movement's positive Y remains downward on screen, including the action named `actU`; this is deliberately left for visual review. Ship foreground and background are both `0xeeeeee`, also preserved for review. No game frame has been inspected yet.
+After visual inspection, Up and Down were corrected to match screen coordinates. Ships use the base background so their A glyphs are visible. After movement, the view offset follows the local ship; its position projects to screen center. The local ship still participates in the existing random drift.

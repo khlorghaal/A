@@ -42,7 +42,6 @@ const
   colDpadBg = 0x444444'u32
   colDbgFg  = 0x000000'u32
   colDbgBg  = 0x00ee00'u32
-  colShipBg = 0xeeeeee'u32
 
   etypShip  = 0b0001'u64
   shipMax   = 0xffffe
@@ -94,10 +93,10 @@ type Action = enum actU, actL, actR, actD, actF
 
 proc act(a: Action) =
   case a
-  of actU: ships[0].p += v( 0, 1)
+  of actU: ships[0].p += v( 0,-1)
   of actL: ships[0].p += v(-1, 0)
   of actR: ships[0].p += v( 1, 0)
-  of actD: ships[0].p += v( 0,-1)
+  of actD: ships[0].p += v( 0, 1)
   of actF: discard
 
 proc draw(m: i2, c: Cell) =
@@ -146,8 +145,10 @@ proc stepShips() =
     of 1: ships[i].p += v(-1, 0)
     else: discard
 
+  view = ships[0].p
+  for i in 0..<shipsEnd:
     let s = ships[i]
-    draw(s.p, Cell(g: s.chr, fg: s.fac, bg: colShipBg))
+    draw(s.p, Cell(g: s.chr, fg: s.fac, bg: colBaseBg))
 
 proc main(): int =
   if a_init_locale() == 0: return 1
