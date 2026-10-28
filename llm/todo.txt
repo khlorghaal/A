@@ -1,0 +1,10 @@
+A
+├─ done: four independent TUI processes, PTYs, loopback coupling
+├─ done: Nim gateway models latency, jitter and loss
+├─ done: movement propagates; replicas converge; clean exit and crash cleanup
+├─ test entry: make multi_agentvm (Nim, Futhark, Clang; Python inspection dependencies)
+├─ limitations
+│  ├─ test-only transport, JSON, trusted loopback peers; not an Internet protocol
+│  ├─ test build suppresses random drift; all clients manipulate the same ship
+│  └─ tmux multi remains a separate two-client local rendering launcher
+└─ next: protocol research and action-specific scheduling experiments

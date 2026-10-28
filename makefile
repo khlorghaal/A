@@ -1,4 +1,4 @@
-.PHONY: all run check test clean
+.PHONY: all run multi multi_agentvm check test clean
 
 all: build/A
 
@@ -8,6 +8,18 @@ build/A: a.nimble src/a.nim src/client.nim src/sync.nim src/p2p.nim deps/termbox
 
 run: build/A
 	./build/A
+
+multi: build/A
+	@if [ -n "$$TMUX" ]; then \
+		id=$$(tmux new-window -P -F "#{window_id}" -n A-test "A_PEER_ID=1 ./build/A") || exit; \
+		tmux set-option -w -t "$$id" remain-on-exit off; \
+		tmux split-window -h -t "$$id" "A_PEER_ID=2 ./build/A" || { tmux kill-window -t "$$id"; exit 1; }; \
+	else \
+		tmux new-session -d -s A-test "A_PEER_ID=1 ./build/A" || exit; \
+		tmux set-option -w -t A-test:0 remain-on-exit off; \
+		tmux split-window -h -t A-test:0 "A_PEER_ID=2 ./build/A" || { tmux kill-session -t A-test; exit 1; }; \
+		tmux attach-session -t A-test; \
+	fi
 
 check: build/A
 	nim check src/p2p.nim
@@ -20,3 +32,15 @@ test:
 
 clean:
 	rm -rf build
+
+multi_agentvm: build/A-multi build/gateway
+	nim c $(NIMFLAGS) --out:build/multi-checks -r tests/multi_checks.nim
+	python3 tools/multi_agentvm.py
+
+build/A-multi: src/a.nim src/client.nim src/sync.nim src/p2p.nim tests/socket_gateway.nim tests/sim_socket.nim
+	mkdir -p build
+	nim c $(NIMFLAGS) -d:simSockets --out:$@ src/a.nim
+
+build/gateway: tests/socket_gateway.nim tests/sim_socket.nim
+	mkdir -p build
+	nim c $(NIMFLAGS) --out:$@ tests/socket_gateway.nim
