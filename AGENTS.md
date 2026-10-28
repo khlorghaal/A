@@ -1,9 +1,7 @@
 # A
 
-A is the glyph of a ship. Keep columns aligned; preserve the author’s compact, data-oriented notation.
+A is the glyph of a ship. Keep columns aligned and preserve the compact, data-oriented notation.
 
-For important code use visual annealing: render, locate an awkward region of about 3–20 lines, revise in text, render again. Widen the enclosing scope when local edits do not settle. Revisit the whole file. Visual structure participates in reasoning; do not impose uniform compression or extract helpers automatically.
+For important code, use visual annealing: render, locate an awkward region of about 3–20 lines, revise in text, and render again. Widen the scope when local edits do not settle; revisit the whole file. Visual structure participates in reasoning. Do not impose uniform compression or extract helpers automatically.
 
-Use a.c as the behavioral baseline for the initial Nim port. The network module p2p.nim has external transport/policy contracts. sync.nim bridges typed fields to its rows and queues; a.nim invokes the bridge each frame. The socket transport remains external and unbound by default.
-
-See llm/session.md and llm/visual-references.md for continuation context. Keep uploaded reference images and machine-generated build/capture output out of Git.
+Sources are in src/. The game uses src/client.nim and src/sync.nim; src/p2p.nim provides the network core. Transport and policy hooks remain external. src/net.nim is design pseudocode. See llm/ for design and visual reference notes. Keep uploaded reference images and generated builds or captures out of Git.

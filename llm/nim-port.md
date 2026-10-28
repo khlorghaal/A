@@ -1,40 +1,7 @@
 # Nim port
 
-`a.nim` ports `a.c`, using the earlier Nim draft supplied in chat. `a.c` is retained as a reference. Network code remains separate in `p2p.nim`.
+Sources are in src/. The game uses client.nim for terminal rendering and GUI, and sync.nim with the P2P core for state synchronization. Socket transport and policy hooks remain external and unbound. net.nim is design pseudocode. The original C game remains in Git history.
 
-Build with Nim 1.6.14 or newer, a C compiler, Clang/libclang development files, and the pinned termbox2 submodule. Install the pinned Futhark dependency first:
+Initialize the deps/termbox2 submodule and install the Nimble, C and Clang dependencies before building. Run `make`, `make check`, `make test`, or `make run`. The game follows the local ship with a simple position offset.
 
-```sh
-git submodule update --init
-nimble install -d
-make
-make test
-make check
-make run
-```
-
-`make` builds without launching the game. `make test` exercises geometry, movement, allocation limits, RNG and monotonic timing without initializing a terminal.
-
-Preserved: seven initial ships; A glyph; positions, stats and colors; the first ship responds to arrow keys; signed RNG remainders; horizontal random drift; 25ms target frame interval; ESC/Ctrl-C exit; terminal cleanup. The C allocation limit still overwrites the last slot and reports the capacity condition.
-
-Corrections made during port:
-
-- Initialize the process locale for libc Unicode width handling. Explicit 32-bit termbox attributes and event ABI, with one C implementation unit. UTF-8 graphemes are converted to codepoint sequences for `tb_set_cell_ex`.
-- Only live ships are visited, rather than the entire fixed allocation.
-- RNG arithmetic wraps explicitly; C's signed-overflow behavior was undefined. The shift is arithmetic, matching the original target.
-- Monotonic microseconds come from one reading. Frame sleep uses time spent in the current frame rather than the prior frame's sleep interval.
-- Pad dimensions derive from its complete 13 rows and terminal columns. The C array declared 16 strings but supplied 26, drew only seven rows, and allowed hit indices outside its row maps. The larger pad in the earlier Nim draft also mixed UTF-8 bytes with terminal columns and indexed beyond its rows. This port keeps the C's smaller design and completes it.
-- Absent mouse input uses an off-screen sentinel; resize events no longer stop draining the input queue.
-- Truecolor is requested directly. The C fallback chain treated success (zero) as failure, potentially replacing the intended mode with grayscale. Termbox does not detect terminal truecolor support; use a truecolor terminal for inspection.
-
-After visual inspection, Up and Down were corrected to match screen coordinates. Ships use the base background so their A glyphs are visible. After movement, the view offset follows the local ship; its position projects to screen center. The local ship still participates in the existing random drift.
-
-## Header imports
-
-`client.nim` imports `deps/termbox.h` through Futhark 0.13.0 (pinned in a.nimble). It generates the event layout, constants and procedures from the configured C header at compile time. No handwritten Nim ABI declarations remain. The small C implementation and header live directly in deps; llm contains agent notes.
-
-The five key aliases in the C header expose expression macros as enum constants, which this Futhark release can evaluate. Their values remain defined by termbox2. Event field `type` is imported as `kind` to avoid a Nim keyword.
-
-Clang/libclang and Futhark are build-time dependencies; the game does not link libclang. Generated imports are cached under ignored build/nimcache. After editing a C header, use `make clean` to invalidate Futhark's header cache, or regenerate with `make NIMFLAGS="--nimcache:build/nimcache -d:opirRebuild"`.
-
-The client module now owns terminal lifecycle, projection and grapheme drawing, pad GUI, and debug-header printing. The game supplies the pad action callback and retains ship state and message lifetime.
+Futhark generates terminal bindings from deps/termbox.h. After changing a header, regenerate its cached imports, for example with `make NIMFLAGS=-d:opirRebuild`.
