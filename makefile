@@ -2,7 +2,9 @@
 
 all: build/A
 
-build/A: a.nimble src/a.nim src/client.nim src/sync.nim src/p2p.nim deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
+build/A build/A-multi: a.nimble nim.cfg src/a.nim src/client.nim src/sync.nim src/p2p.nim deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
+
+build/A:
 	mkdir -p build
 	nim c $(NIMFLAGS) --out:$@ src/a.nim
 
@@ -37,10 +39,10 @@ multi_agentvm: build/A-multi build/gateway
 	nim c $(NIMFLAGS) --out:build/multi-checks -r tests/multi_checks.nim
 	python3 tools/multi_agentvm.py
 
-build/A-multi: src/a.nim src/client.nim src/sync.nim src/p2p.nim tests/socket_gateway.nim tests/sim_socket.nim
+build/A-multi: tests/socket_gateway.nim tests/sim_socket.nim
 	mkdir -p build
 	nim c $(NIMFLAGS) -d:simSockets --out:$@ src/a.nim
 
-build/gateway: tests/socket_gateway.nim tests/sim_socket.nim
+build/gateway: tests/socket_gateway.nim tests/sim_socket.nim src/p2p.nim
 	mkdir -p build
 	nim c $(NIMFLAGS) --out:$@ tests/socket_gateway.nim

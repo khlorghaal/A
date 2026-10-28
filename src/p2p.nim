@@ -1,6 +1,6 @@
 # peers cant desync if a cliebt is barely sank to its own sink
 # maintain evanescent stochastic dendrites
-import std/[tables, sets, random, sequtils]
+import std/[tables, sets, random, sequtils, math]
 
 type
   PeerId* = uint64
@@ -20,6 +20,7 @@ type
   Datum* = object
     key*, revision*: uint64
     bytes*: seq[byte]
+    age*  : float64 # sample age at receipt, seconds; supplied by transport
   Receipt* = tuple[source: PeerId, datum: Datum]
 
   KindId* = uint16
@@ -157,7 +158,12 @@ iterator informantEdges*(n: Net): Edge =
     for source in p.informants:
       yield (source, p.info.id)
 
-proc tick*(n: var Net) =
+proc tick*(n: var Net, dt = 0.0) =
+  # Age existing outgoing rows; pass zero when they were just published.
+  doAssert dt >= 0 and classify(dt) notin {fcNan, fcInf, fcNegInf}
+  for k in n.kinds.values:
+    for d in k.row.mitems: d.age += dt
+
   n.receive()
   for p in n.all: traffic(p)
 

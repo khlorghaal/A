@@ -1,11 +1,18 @@
 # test-only coupling; loopback UDP carries simulated datagrams
-import std/[net, nativesockets, json, jsonutils, os, tables, monotimes, times, strutils]
+import std/[net, nativesockets, json, jsonutils, tables, monotimes]
 from std/posix import EAGAIN, EWOULDBLOCK
 import ../src/p2p
-import sim_socket
+when isMainModule:
+  import std/[os, times, strutils]
+  import sim_socket
 
 proc packet(dst: PeerId, e: Event): string =
-  $(%*{"dst": dst, "event": e.toJson})
+  $(%*{"dst": dst, "event": e.toJson, "sentAt": getMonoTime().ticks})
+
+proc unpack(msg: JsonNode): Event =
+  result = msg["event"].jsonTo(Event)
+  # All test processes share this OS monotonic clock, unlike Internet peers.
+  result.datum.age += float64(getMonoTime().ticks - msg["sentAt"].getBiggestInt)/1e9
 
 proc bindClient*(n: var Net, port: Port) =
   let socket = newSocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
@@ -27,7 +34,7 @@ proc bindClient*(n: var Net, port: Port) =
       except OSError as e:
         if e.errorCode notin [int32(EAGAIN), int32(EWOULDBLOCK)]: raise
         break
-      result.add parseJson(bytes).jsonTo(Event)
+      result.add unpack(parseJson(bytes))
   sendDatum = proc(p: Peer, k: Kind, d: Datum) =
     socket.sendTo("127.0.0.1", port, packet(p.info.id,
       Event(event: data, source: source, kind: k.id, datum: d)))
@@ -55,10 +62,10 @@ when isMainModule:
         if e.errorCode notin [int32(EAGAIN), int32(EWOULDBLOCK)]: raise
         break
       let msg = parseJson(bytes)
-      let e = msg["event"].jsonTo(Event)
+      let e = unpack(msg)
       endpoints[e.source.id] = (host, port)
       let dst = msg["dst"].getBiggestInt.uint64
       if dst != 0: g.send(dst, e)
     for id, endpoint in endpoints:
-      for e in g.recv(id): socket.sendTo(endpoint.host, endpoint.port, $e.toJson)
+      for e in g.recv(id): socket.sendTo(endpoint.host, endpoint.port, packet(id, e))
     sleep(2)

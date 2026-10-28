@@ -36,7 +36,7 @@ def scenario(latency, jitter, loss, crash=False):
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 30, 80, 0, 0))
             env = dict(os.environ, TERM='xterm-256color', LANG='C.UTF-8',
                        A_PEER_ID=str(i+1), A_GATEWAY_PORT=str(port),
-                       A_STATE_FILE=str(OUT/f'state-{i}'))
+                       A_STATE_FILE=str(OUT/f'state-{i}'), A_TEST_VX='4')
             def terminal():
                 os.setsid()
                 fcntl.ioctl(0, termios.TIOCSCTTY, 0)
@@ -68,11 +68,17 @@ def scenario(latency, jitter, loss, crash=False):
             children[0].wait(timeout=2)
             print("client crash: supervisor cleanup exercised")
             return
+        started = time.monotonic()
+        before_x = [float((OUT/f'state-{i}').read_text().split()[0]) for i in range(4)]
         before = [float((OUT/f'state-{i}').read_text().split()[1]) for i in range(4)]
         for _ in range(8):
             os.write(masters[0], b'\x1b[A')
             pump(0.08)
         pump(5)
+        elapsed = time.monotonic() - started
+        after_x = [float((OUT/f'state-{i}').read_text().split()[0]) for i in range(4)]
+        assert max(after_x) - min(after_x) < 0.3, after_x
+        assert all(abs(a-b-4*elapsed) < 0.5 for a, b in zip(after_x, before_x)), (before_x, after_x, elapsed)
         after = [float((OUT/f'state-{i}').read_text().split()[1]) for i in range(4)]
         assert all(a < b - 0.2 for a, b in zip(after, before)), (before, after)
         assert max(after) - min(after) < 0.3, after
