@@ -1,6 +1,9 @@
 import std/[monotimes, os, tables, math, strutils]
 import p2p, sync
 import client
+when defined(simSockets):
+  import ../tests/socket_gateway
+  from std/nativesockets import Port
 
 type
   Ship = object
@@ -81,6 +84,7 @@ proc act(a: Action) =
 
 proc stepShips(dt = 0.025) =
   for i in 0..<shipsEnd:
+    when defined(simSockets): continue
     case hrng() mod 5
     of 0: ships[i].p += sv( 1, 0)
     of 1: ships[i].p += sv(-1, 0)
@@ -99,6 +103,8 @@ proc main(): int =
   defer: closeScreen()
 
   initShips()
+  when defined(simSockets):
+    net.bindClient(Port(getEnv("A_GATEWAY_PORT").parseInt))
   replication.publish(liveShips)
   t0 = nowUs()
   now = 0
@@ -131,6 +137,10 @@ proc main(): int =
 
     drawPad(mouse, act)
     stepShips(dt)
+    when defined(simSockets):
+      let statePath = getEnv("A_STATE_FILE")
+      writeFile(statePath & ".tmp", $ships[0].p.x & " " & $ships[0].p.y)
+      moveFile(statePath & ".tmp", statePath)
 
     if dbgDur > 0:
       debugHeader(dbgp)
