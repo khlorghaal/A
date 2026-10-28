@@ -2,9 +2,9 @@ import std/[os, unicode, math]
 import futhark
 from sync import sync_v2, sv
 
-const root = currentSourcePath().parentDir
+const root = currentSourcePath().parentDir.parentDir
 {.passC: "-I" & root.}
-{.compile: "deps/termbox.c".}
+{.compile: "../deps/termbox.c".}
 
 importc:
   path root / "deps"

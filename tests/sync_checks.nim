@@ -1,5 +1,5 @@
 import std/[tables, math]
-import ../[p2p, sync]
+import ../src/[p2p, sync]
 
 type Entity = object
   id     : Uid

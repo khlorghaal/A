@@ -1,32 +1,11 @@
-# Continuation notes — 2026-10-27
+# Continuation notes
 
-Current network source: p2p.nim, copied from the final p2p_net.nim of the visual refinement session.
-Earlier renderings and uploaded images are omitted from Git; see visual-references.md for descriptions. The original pseudocode is not available here as source.
+A is named for the glyph of a ship. Column alignment and compact, data-oriented notation matter to the author.
 
-Purpose: authority-free stochastic P2P synchronization with bandwidth below simulation rate. Evanescent connections, probabilistic pairing/pruning and sampling by datakind. Transport and policy callbacks remain external; read their contracts in the source. Prior work was visually reviewed, NOT compiled or tested. Do not assume correctness from appearance or prior confidence.
+Refine important code through visual annealing: render it, isolate an awkward region of roughly 3–20 lines, revise it in text, and render again. Widen the scope if the local composition does not settle; alternate local and whole-file views. Visual structure is a medium of engineering thought, not merely formatting. Avoid automatic helper extraction or uniform compression.
 
-User's method: visual annealing. Inspect rendered code to locate inelegance. Isolate about 3–20 lines; revise several times textually, render again, and let what is seen determine subsequent edits. Widen to enclosing structure when local refinement will not settle. Alternate local and whole-file views. Shape emerges through refining thought and behavior, not through imposing a silhouette. Visual inspection must occur DURING iteration, not merely approve the finished text.
+The current sources are under src/. src/p2p.nim implements stochastic authority-free peer networking with external transport and policy hooks. src/sync.nim explores type-marked, trust-weighted state synchronization; see synchronization.md. The game publishes and reconciles synchronized state; socket transport and policy hooks remain external and unbound. src/net.nim is design pseudocode.
 
-Code is a medium of largely nonverbal engineering thought and calligraphy with intrinsic aesthetic value. Attend to spatial relations, rhythm, density, repetition and interruption alongside semantics. Avoid reducing this to formatting, readability or compression. Helpers can damage a coherent continuous operation; repetition can expose relationships. Beauty suggests where to investigate; inspect the mechanism too.
+The integrated game was restored after the source move. make check and make test pass with the locally available Nim 1.6.14 and Futhark 0.13.0 toolchain; the declared Nim 2 dependency has not been tested in this environment.
 
-Reference: Josh Parnell's https://github.com/JoshParnell/ltheory/blob/master/script/UI/Graph.lua — valued for practical force and continuity of preparation, action and release. User considers ltheory a precious surviving work of sapient craft.
-
-Latest pass: join/arrival separated; receiver unified into event dispatch; discovery, pruning and transmission refined through local rendering cycles. User is greatly satisfied with the current composition. Preserve that character in further work. Replies should be brief, precise, without business idioms or excessive explanation.
-
-Repository excludes transfer helpers, caches and uploaded reference images. Scratch has no known guaranteed retention duration; keep this archive and use Git for ongoing programming. Persistent memory write tools were unavailable here; the user subsequently saved the visual-annealing memory in another conversation.
-
-Project name: A is the glyph of a ship. Column alignment is an explicit style requirement.
-
-Current task: three local commits (notes/P2P, Nim game port, visual-inspection preparation). Do not push or open a PR yet. Preserve a.c behavior as baseline, using the user-supplied earlier Nim draft where useful. Stop before running the game so the user can switch to Terra.
-
-## Local implementation state
-
-Branch: work/nim-port, based on origin/master at 7fe52e3. No push or PR authorized yet. The user supplied the missing earlier Nim draft in chat; its useful data declarations and grapheme conversion were retained and corrected. a.nim now compiles; the termbox2 gitlink is initialized and its missing .gitmodules entry restored. p2p.nim is byte-identical to the latest session source and passes nim check.
-
-Game checks cover vector bounds, pad geometry, deterministic wrapping RNG, seven-ship initialization, input movement, allocation limits, Unicode width and monotonic timing. Read llm/nim-port.md for differences from a.c. The game itself has NOT been launched; stop here for the user to switch to Terra. llm/visual-inspection.md describes the prepared PTY, commands, environment and anticipated artifacts. Keep this pause distinct from the noninteractive tests already run.
-
-Header-import revision: native is now deps; docs is now llm. termbox.nim is a 12-line Futhark import module. Futhark 0.13.0 is pinned for Nim 1.6 compatibility; the newer compiler download was unavailable. Generated ABI, build, game assertions, semantic checks and a PTY mouse/exit smoke test passed. No push or PR.
-
-Client extraction: termbox.nim was renamed client.nim and now holds screen initialization/shutdown/presentation, cell drawing, pad GUI and debug-header printing. a.nim retains game state, input dispatch and debug lifetime.
-
-Typed synchronization: Ship.p is now sync_v2 (float coordinates), trigger is sync_b; sync.nim derives records from field types and bridges the P2P row/queue. Owners receive +0.5 trust for that entity; elapsed-time exponential blending and retained per-source reports prevent packet-rate amplification. Boolean confidence has 0.6/0.4 hysteresis. See synchronization.md for semantics and remaining transport/session work. No sockets are configured by default.
+Uploaded images are omitted; visual-references.md describes them. The author values Josh Parnell's ltheory as a surviving work of sapient craft.
