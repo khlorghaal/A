@@ -1,0 +1,39 @@
+architecture
+├─ synchronization
+│  ├─ sync_k2 pairs position and velocity; integrate velocity without acceleration
+│  ├─ sample age advances received position by velocity × age, capped by a .25s horizon
+│  ├─ owners are tracked by entity UID; owner influence is configurable
+│  ├─ correction: alpha = 1 - exp(-k*W*dt/(1 + L + W)), default k=8/s
+│  ├─ sync_b is persistent state with hysteresis, not one-shot event delivery
+│  └─ transport is external; test-only loopback uses a shared monotonic clock
+├─ proposed credibility evolution
+│  ├─ per desync: disc = c01(disc + sev); severity already incorporates packet interval
+│  ├─ per update: disc = c01(disc - .05*dt)
+│  ├─ per update: cred = c01(cred + (1 - cred - disc*disc)*.001*dt)
+│  └─ packet-independent discrepancies such as ammo still need a severity rule
+└─ current limitations: no restart epochs, schema negotiation or authenticated transport
+
+each test client has its own dbs under $tmpdir/A/testclientN
+test gateway db is peristent under build/gateway/db
+build/client likewise contains build artefacts and its single db
+build/client is used for debug/run, its db is not used for automated tests
+makefile passes client an arg to indicate what db dir to use, obviously with default vals above
+
+current code
+├─ src/p2p.nim uses uint64 peer IDs and external authenticated transport hooks
+├─ src/sync.nim reconciles marked entity fields and tracks ownership
+├─ src/client.nim owns terminal initialization, drawing, controls and debug header
+└─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
+
+synchronization details
+├─ each kinetic record pairs position and velocity; no acceleration or intent prediction
+├─ sender-row, transport and cached time contribute to sample age
+├─ duplicates and reordered revisions do not refresh a report's age
+├─ kinetic records expire at .25s; other records default to 2s
+├─ expired motion does not imply stopping; local simulation retains velocity
+├─ ownerBonus defaults to 4; finite owner preference does not prevent dilution
+├─ sync_b has .6/.4 hysteresis and is not reliable event delivery
+├─ records encode 128-bit entity ID, publisher revision and marked fields in little-endian order
+├─ malformed, nonfinite, negative-age, unknown and stale records are rejected
+├─ expired reports retain watermarks; 64-bit transport keys are collision-checked
+└─ report scanning and repeated decoding remain a scaling limitation

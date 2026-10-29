@@ -1,0 +1,73 @@
+network
+├─ trust design (proposed; not yet implemented)
+│  ├─ credibility: user credibility, including disruptive desyncs
+│  ├─ reliability: locally measured network integrity
+│  ├─ position: .9 reliability + .1 credibility
+│  ├─ self-received hits and ammo: .8 credibility + .2 reliability
+│  ├─ other-inflicted hits: .5 reliability + .5 credibility
+│  ├─ witnessed / paragon / swarm influence: .4 / .4 / .2
+│  ├─ peers share their complete witnessed database on connection, then spray updates
+│  └─ remote witnessed opinions become swarm or paragon evidence, never local witness
+├─ reliability by ping: 30ms=1, 80ms=.8, 150ms=.5, 400ms=.05
+│  └─ interpolate linearly and clamp at endpoints; jitter and loss remain unspecified
+└─ current network transport is external; test gateway uses simulated delay and loss
+
+missing entries have 0 trust. new accounts on the gateway db have .5 .
+paragons are either the players manually added friends or the gateway's highly trusted peers.
+db/[ trust_witnessed trust_paragon trust_swarm friends ].toml
+
+gateway keeps paragons.toml trust_paragons.toml trust_swarm.toml
+the gateway recieves trust_swarm from its paragons, it does not speak with non-paragons after handoff.
+
+paragons and friends are simply player ids. gateway allocates player accounts and unique string ids. player id is full utf including emojis and diacritics and zalgo.
+
+Current implementation: PeerId is uint64; string player IDs, account allocation,
+session authentication and trust databases are not implemented.
+
+Agent note
+├─ player IDs compare by exact Unicode sequence; do not normalize
+└─ weight each paragon or swarm report by the reporter's combined credibility
+   └─ credibility combines witnessed, paragon and swarm components with .4/.4/.2 weights
+
+paragons are not revealed to players, trust_paragon on peers is the initial login db update
+
+2 authority servers, 1 auth, n gateways
+auth provides gateway list
+gateways serve slice of most recently logged in peers; gateway does not know about logoffs
+gateways serve the paragon_trust db of players
+
+Current scope — supersedes earlier topology and friend-trust proposals
+├─ auth and gateway are the same server for now
+├─ friend trust is excluded from the current implementation and deferred
+└─ excommunication is a separate override; preserve underlying witnessed credibility
+
+Credibility reports
+├─ other: a single peer in the context of a communication or connection
+├─ swarm: all other peers collectively
+├─ each other's contribution about a subject is other credibility × reported credibility
+└─ average contributions within the relevant category; reliability remains local
+
+Bootstrap clarification: zero initializes peers; the database sets new accounts to .5.
+
+Original author specification, verbatim:
+credibility: of user credibility such as suspicious or highly disruptive desyncs
+reliability: of network integrity
+
+so swarm trust accumulation only involves credibility
+reliability is determined locally
+
+trust is dot of the 2, calculated different where relevant
+
+position syncs are .9 reliab .1 cred
+self-recieved-hits and ammo (incl missiles) are .8 cred .2 rliab
+other-inflicted-hits are .5 reliab .5 cred
+
+cred is lost from desyncs of: offensive hits, ammo, hp;
+where loss increases parab, such that a few desyncs have little effect.
+cred-decred max change rate is .1%/sec
+
+Historical formulas, verbatim; superseded by accepted evolution in architecture.txt:
+decred-=  clap01(.05*dt); //each decred lasts 20sec
+cred-= decred*decred *dt *.001;
+//cred slowly increases constantly sqrtly:
+cred= sqrt(cred+.001dt) sq

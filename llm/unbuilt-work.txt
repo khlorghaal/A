@@ -1,0 +1,8 @@
+Current work
+├─ verified: Nim 2.4, local Clang 19 and Futhark build the game
+├─ verified: make test and make multi_agentvm pass
+├─ verified: eight owner inputs settle at ~5.34 cells without delay and ~4.32 with delay/loss
+│  └─ current movement threshold is a smoke check, not an owner-control guarantee
+├─ pending: recreate per-peer measured latency matrix; address correlated echoes
+├─ pending: connect trust to game and implement authenticated transport and gateway
+└─ terminal image capture remains separate under llm/terminal; install its Python dependencies to use it
