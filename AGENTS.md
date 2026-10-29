@@ -30,3 +30,5 @@ codex@users.noreply.github.com. Preserve other authors' attribution when
 replaying their work.
 
 Project agent skills live under llm/agents/skills/, not .agents/.
+
+Use LF line endings for project text files; the user does not want CRLF.
