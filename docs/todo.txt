@@ -17,8 +17,6 @@ dbs
 
 	gateway has db/[ users trust_swarm trust_paragons paragons ], where trust_paragons is trust data from paragons' witness
 
-	docs: nothing saves trust_swarm, it is volatile.
-
 	test dbs
 		each test client has its own dbs under $tmpdir/A/testclientN
 		test gateway db is peristent under build/gateway/db

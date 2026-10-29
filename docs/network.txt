@@ -71,3 +71,28 @@ decred-=  clap01(.05*dt); //each decred lasts 20sec
 cred-= decred*decred *dt *.001;
 //cred slowly increases constantly sqrtly:
 cred= sqrt(cred+.001dt) sq
+
+Session credentials and peer proofs (design; not implemented)
+├─ TLS protects registration and login; the client verifies the gateway certificate
+├─ registration associates a player ID with a public OpenPGP key; the gateway
+│  challenges the client to demonstrate possession of its corresponding secret key
+├─ after login, a gateway-signed, short-lived credential can bind the player ID
+│  to a fresh public session key and an expiry; the client keeps the private key
+├─ peers verify the credential using the gateway's trusted signing public key
+│  ├─ verify signature, expiry, intended protocol/audience and exact credential bytes
+│  └─ no gateway lookup is required for each peer connection
+├─ the peer issues a fresh, single-use challenge; the client signs a transcript
+│  including that challenge, the credential and the connection context
+│  └─ verify the signature with the session key bound by the credential
+├─ a signed credential alone is bearer data; proof of the private session key
+│  prevents somebody who merely copies it from impersonating the client
+├─ bind proof to the transport session and reject reused challenges or old sessions
+│  └─ protocol must define framing, endpoint identity, expiry, clock skew and replay cache
+├─ peers cannot learn early revocations offline without extra distribution;
+│  short expiry bounds exposure and gateway signing keys need rotation
+└─ this is a proposed peer proof, not RFC 9449 DPoP: standard DPoP uses HTTP
+   proofs bound to a method and URI, and would require an HTTP-based profile
+
+Swarm storage
+├─ current TrustDb keeps swarm observations in memory, keyed by reporter and subject
+└─ save writes witnessed and paragon stores only; swarm is not restored after restart
