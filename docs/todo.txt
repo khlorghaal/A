@@ -32,8 +32,8 @@ gateway and authenticated peer IDs: enforce NFC identity comparison
 credibility and reliability
 	persistence, and witness propagation
 	
-quantify owner control
-  during abrupt changes and sustained disagreement
+owner control
+  extend abrupt-change and sustained-disagreement measurements across peer and latency matrices
   data from an entity's owner gets +.3 cred
 
 

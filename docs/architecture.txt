@@ -45,3 +45,11 @@ Doot map
 ├─ src/hmap.nim uses fixed-depth buckets with packed deletion
 ├─ padding reserves room during expansion
 └─ Monte Carlo allocation grows until padding fits, with no imposed growth cap
+
+Owner influence measurements (deterministic simulation)
+├─ make owner_measurements: four peers, 25ms ticks, seed 123, owner bonus 4
+├─ after a one-time 8-cell owner jump, repeated reports settle near 5.70 cells
+│  with no delay and 4.42 with 80ms delay, 35ms jitter and 25% loss
+├─ holding the owner at 8 converges near 8; with one peer held at 0, the owner
+│  settles near 7.86 and the other two peers near 7.20
+└─ these are fixture outcomes, not authority guarantees or the proposed +.3 rule

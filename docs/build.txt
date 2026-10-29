@@ -15,3 +15,6 @@ Build behavior
 ├─ NIMFLAGS applies to every compilation target
 ├─ game binaries depend on src/*.nim
 └─ build/gateway is the test relay; the identity gateway is still pending
+
+Owner measurements
+└─ make owner_measurements prints deterministic impulse and disagreement results
