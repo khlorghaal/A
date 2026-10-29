@@ -37,3 +37,11 @@ synchronization details
 ├─ malformed, nonfinite, negative-age, unknown and stale records are rejected
 ├─ expired reports retain watermarks; 64-bit transport keys are collision-checked
 └─ report scanning and repeated decoding remain a scaling limitation
+
+Doot hash
+└─ src/doot_hash.nim preserves the integer hash formulas with uint32 results
+
+Doot map design
+├─ fixed-depth buckets; padding reserves room during expansion
+└─ unbounded Monte Carlo allocation; keep growing until the padding fits
+   └─ preserve this policy in the pending Nim port; no growth cap or collision cutoff

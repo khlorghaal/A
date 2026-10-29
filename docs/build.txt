@@ -7,3 +7,11 @@ build and inspection
 │  └─ raw terminal output and test state are under build/multi
 └─ llm/terminal/vterm.py provides PTY key, mouse, resize and capture commands
    └─ captures are reconstructions; inspect raw terminal output for shaping issues
+
+Build targets
+├─ make run starts the client; make multi opens an interactive tmux pair
+├─ make test runs automated game, sync and trust checks without tmux
+├─ make check builds the client and checks the network/sync modules
+├─ make multi_agentvm runs deterministic network checks and four real PTYs
+├─ NIMFLAGS applies to every compilation target
+└─ game binaries depend on src/*.nim; gateway is currently only a test relay

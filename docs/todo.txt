@@ -1,11 +1,9 @@
-makefile is mid. comment it and clean.
-
-doots hash and hmap .hpp
-  into nim
-  git rm hash.h hmap.hpp
+doots hmap .hpp
+  into nim; preserve unbounded Monte Carlo expansion and padding
+  git rm hmap.hpp after the port is verified
 
 gateway
-  implement auth and gateway as the same server.
+  auth and gateway as the same server.
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
   gateway authoritates peer identities and session tokens.
   only paragons contact the gateway after signin
@@ -40,16 +38,19 @@ compare player IDs by normalized Unicode sequence
 credibility and reliability
 	persistence, and witness propagation
 	
-implement hit adjudication and defender-favoring rules
-  khlor: wait wtf is adjudication, move to defered todo and elaborate what this means
-
 quantify owner control
   during abrupt changes and sustained disagreement
   data from an entity's owner gets +.3 cred
   weapon hits are not owned in that sense, document
 
 
-Deferred>>>
+defer>>>
+
+hit adjudication and defender-favoring rules
+  Decide whether a reported weapon hit counts and how much damage it causes when
+  peers disagree. Defender-favoring rules would favor the target in ambiguous
+  cases. Timing, evidence and thresholds still need definition.
+
 
 
 define packet-independent severity and reliability effects of jitter and loss
@@ -68,7 +69,7 @@ gateway
     gw may send paragons excommunication orders to set gw/db/paragon_trust and a packet to all paragons locking trust_witnessed on that player to 0 with a bool locking it
 	  this is much funnier than banning
 
-reimplement friend trust
+friend trust
 
 decentral auth and gateways, fully trusted replication for load and geography
 

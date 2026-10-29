@@ -1,11 +1,16 @@
-# Continuation notes
-
-A is named for the glyph of a ship. Column alignment and compact, data-oriented notation matter to the author.
-
-Refine important code through visual annealing: render it, isolate an awkward region of roughly 3–20 lines, revise it in text, and render again. Widen the scope if the local composition does not settle; alternate local and whole-file views. Visual structure is a medium of engineering thought, not merely formatting. Avoid automatic helper extraction or uniform compression.
-
-The current sources are under src/. src/p2p.nim implements stochastic authority-free peer networking with external transport and policy hooks. src/sync.nim explores type-marked, trust-weighted state synchronization; see synchronization.md. The game publishes and reconciles synchronized state; socket transport and policy hooks remain external and unbound. src/net.nim is design pseudocode.
-
-The integrated game was restored after the source move. make test passed with Nim 2.2.12 and Futhark 0.13.0; see docs/build.txt for build and inspection.
-
-Uploaded images are omitted; visual-references.md describes them. The author values Josh Parnell's ltheory as a surviving work of sapient craft.
+Current session
+├─ queue: docs/todo.txt; plain indented text with a defer>>> remainder
+│  ├─ all later lines deferred, even headings and unindented items
+│  ├─ explicitly deferred entries above the boundary also excluded
+│  └─ removed old duplicate queue from llm/todo.txt
+├─ local skills: .agents/skills/{todo,do}/SKILL.md
+│  └─ cloud skill sources have no write tool; project overrides live here
+├─ commits: coherent checkpoints before large changes; verified segments afterward
+├─ verified toolchain: Nim 2.4, Clang 19, Futhark 0.16 under /workspace/toolchains
+├─ game fix: bind allocated pointer before assignment to avoid double allocation
+├─ tests: Nim four-PTY harness; terminal image capture separate in llm/terminal
+└─ open: owner echoes dilute eight inputs to ~5.34/4.32 cells; trust/game integration
+├─ hash_t is uint32; integer hash port committed and verified
+├─ Nim map port remains a draft; preserve unbounded Monte Carlo allocation
+│  └─ no growth cap or collision cutoff; expansion padding is part of the design
+└─ next active work: map port, gateway, databases, Unicode identity, owner control
