@@ -36,6 +36,7 @@ test:
 	mkdir -p build
 	nim c $(NIMFLAGS) -d:aTests -o:build/game-checks -r src/a.nim
 	nim c $(NIMFLAGS) -o:build/sync-checks -r tests/sync_checks.nim
+	nim c $(NIMFLAGS) -o:build/doot-hash-checks -r tests/doot_hash_checks.nim
 	nim c $(NIMFLAGS) -o:build/trust-checks -r tests/trust_checks.nim
 	nim c $(NIMFLAGS) -o:build/trustdb-checks -r tests/trustdb_checks.nim
 	nim c $(NIMFLAGS) -o:build/trustsync-checks -r tests/trustsync_checks.nim
