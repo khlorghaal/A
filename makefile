@@ -32,6 +32,8 @@ test:
 	nim c $(NIMFLAGS) -d:aTests --out:build/game-checks -r src/a.nim
 	nim c $(NIMFLAGS) --out:build/sync-checks -r tests/sync_checks.nim
 	nim c $(NIMFLAGS) --out:build/trust-checks -r tests/trust_checks.nim
+	nim c $(NIMFLAGS) --out:build/trustdb-checks -r tests/trustdb_checks.nim
+	nim c $(NIMFLAGS) --out:build/trustsync-checks -r tests/trustsync_checks.nim
 
 clean:
 	rm -rf build

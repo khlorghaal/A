@@ -169,7 +169,8 @@ iterator influences(s: Sync, n: Net, entity: Uid): Influence =
     let peer = n.peers.getOrDefault(index.source)
     if peer.isNil or peer notin n.all: continue
 
-    let w = float64(s.weight(index.source, entity, peer.trust))
+    let trust = if n.positionTrust.isNil: peer.trust else: n.positionTrust(peer)
+    let w = float64(s.weight(index.source, entity, trust))
     if w > 0: yield (report.bytes, w, age)
 
 proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],

@@ -1,0 +1,8 @@
+recovery after workspace rollback
+├─ restored: trust formulas, local TOML credibility stores and witness exchange
+├─ tested: trust, store and witness exchange; integration into game remains missing
+├─ TOML loader supports the generated scalar-table subset
+├─ transport must authenticate peer/player mapping; restart epochs remain unresolved
+├─ previous run observed 8 inputs settling at 4–5 cells from correlated peer echoes
+├─ lost: game integration, 10-scenario measured-ping TUI test, gateway and auth prototype
+└─ lost: gateway TLS/OpenPGP/Ed25519 tests and owner disagreement experiments
