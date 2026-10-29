@@ -22,6 +22,10 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 def scenario(latency, jitter, loss, crash=False):
     children, masters, screens, streams, decoders = [], [], [], [], []
+    # Never mistake a previous scenario's output for a newly started client.
+    for i in range(4):
+        (OUT/f'state-{i}').unlink(missing_ok=True)
+        (OUT/f'state-{i}.tmp').unlink(missing_ok=True)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
         probe.bind(('127.0.0.1', 0))
         port = probe.getsockname()[1]
@@ -80,7 +84,9 @@ def scenario(latency, jitter, loss, crash=False):
         assert max(after_x) - min(after_x) < 0.3, after_x
         assert all(abs(a-b-4*elapsed) < 0.5 for a, b in zip(after_x, before_x)), (before_x, after_x, elapsed)
         after = [float((OUT/f'state-{i}').read_text().split()[1]) for i in range(4)]
-        assert all(a < b - 0.2 for a, b in zip(after, before)), (before, after)
+        displacement = [b-a for a, b in zip(after, before)]
+        print(f'8 owner inputs: displacement={displacement} cells (ideal=8)')
+        assert all(d > 0.2 for d in displacement), (before, after)
         assert max(after) - min(after) < 0.3, after
         for i, screen in enumerate(screens):
             assert any('A' in row for row in screen.display), 'ship missing'
