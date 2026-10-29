@@ -1,0 +1,1 @@
+A river gives the same bend a different outline whenever the light changes.
