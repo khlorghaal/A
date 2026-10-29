@@ -37,3 +37,10 @@ synchronization details
 ├─ malformed, nonfinite, negative-age, unknown and stale records are rejected
 ├─ expired reports retain watermarks; 64-bit transport keys are collision-checked
 └─ report scanning and repeated decoding remain a scaling limitation
+
+Doot hash and map
+├─ src/doot_hash.nim preserves the integer hash formulas with uint32 results
+├─ src/hmap.nim uses four slots per bucket, packed deletion and bucket growth
+├─ growth requires free space per bucket; unresolvable collisions or the growth
+│  limit raise ValueError rather than looping indefinitely
+└─ map mutations can invalidate references; maps are not yet used by the game

@@ -1,7 +1,3 @@
-doots hash and hmap .hpp
-  into nim
-  git rm hash.h hmap.hpp
-
 gateway
   auth and gateway as the same server.
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
