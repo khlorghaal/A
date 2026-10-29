@@ -1,5 +1,5 @@
 network
-├─ trust design (proposed; not yet implemented)
+├─ trust modules (game integration pending)
 │  ├─ credibility: user credibility, including disruptive desyncs
 │  ├─ reliability: locally measured network integrity
 │  ├─ position: .9 reliability + .1 credibility
@@ -7,7 +7,8 @@ network
 │  ├─ other-inflicted hits: .5 reliability + .5 credibility
 │  ├─ witnessed / paragon / swarm influence: .4 / .4 / .2
 │  ├─ peers share their complete witnessed database on connection, then spray updates
-│  └─ remote witnessed opinions become swarm or paragon evidence, never local witness
+│  └─ remote witnessed opinions become swarm evidence, never local witness
+│     └─ classifying remote reporters as paragons remains pending
 ├─ reliability by ping: 30ms=1, 80ms=.8, 150ms=.5, 400ms=.05
 │  └─ interpolate linearly and clamp at endpoints; jitter and loss remain unspecified
 └─ current network transport is external; test gateway uses simulated delay and loss

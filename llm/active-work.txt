@@ -1,7 +1,0 @@
-Active work
-├─ done: documented offline peer-proof design and volatile swarm store
-├─ done: documented that weapon hit reports are not entity-owned state
-├─ pending: gateway, persistent per-client/test databases, trust integration
-├─ done: trust-store identity comparison uses NFC; normalized duplicate rows fail load
-├─ pending: apply NFC to gateway and authenticated peer identity mapping
-└─ pending: quantify owner control and apply the requested +.3 credibility rule

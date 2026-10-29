@@ -1,3 +1,5 @@
+Historical handoff from the imported archive; see session.md for current state.
+
 A → Codex handoff
 ├─ user: @khlorghaal; A is the glyph of a ship
 │  ├─ terse responses, compact data-oriented code and aligned columns

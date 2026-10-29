@@ -1,15 +1,20 @@
 Current session
-├─ queue: docs/todo.txt; plain indented text with a defer>>> remainder
-│  ├─ all later lines deferred, even headings and unindented items
-│  ├─ explicitly deferred entries above the boundary also excluded
-│  └─ removed old duplicate queue from llm/todo.txt
-├─ local skills: .agents/skills/{todo,do}/SKILL.md
-│  └─ cloud skill sources have no write tool; project overrides live here
-├─ commits: coherent checkpoints before large changes; verified segments afterward
-├─ verified toolchain: Nim 2.4, Clang 19, Futhark 0.16 under /workspace/toolchains
-├─ game fix: bind allocated pointer before assignment to avoid double allocation
-├─ tests: Nim four-PTY harness; terminal image capture separate in llm/terminal
-└─ open: owner echoes dilute eight inputs to ~5.34/4.32 cells; trust/game integration
-├─ hash_t is uint32; integer hash port committed and verified
-├─ Nim map port uses unbounded Monte Carlo allocation and expansion padding
-└─ next active work: map port, gateway, databases, Unicode identity, owner control
+├─ queue: docs/todo.txt; active view via llm/todo.nim
+│  └─ defer>>> / Deferred>>> defers every following line, regardless of indentation
+├─ workflow: .agents/skills/{todo,do}/SKILL.md; completed details go into docs
+│  ├─ coherent checkpoints before large changes; reviewed segments afterward
+│  └─ Codex commits use Codex <codex@users.noreply.github.com>
+├─ toolchain: Nim 2.4, Clang 19, Futhark 0.16 under /workspace/toolchains
+│  └─ GLib runtime provides NFC normalization
+├─ code
+│  ├─ bind allocated ship pointer before assignment to avoid double allocation
+│  ├─ doot integer hashes return uint32
+│  ├─ Nim hmap preserves unbounded Monte Carlo expansion and padding
+│  └─ trust-store IDs use NFC; duplicate normalized file entries fail loading
+├─ last verification, before cleanup: make test, make check, make multi_agentvm passed
+│  └─ cleanup pass: source/diff review only; user requested no tests
+└─ open work (details remain in docs/todo.txt)
+   ├─ gateway, authenticated peer mapping, isolated databases and trust/game integration
+   ├─ NFC enforcement in future gateway and authenticated peer identities
+   └─ owner-control measurements and requested +.3 credibility rule
+      └─ eight inputs settle near 5.3/4.3 cells in current four-client scenarios

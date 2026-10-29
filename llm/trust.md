@@ -1,6 +1,6 @@
 # Trust design
 
-The following is the author's specification, preserved verbatim. It is a design direction; the current implementation still uses a single peer trust value.
+The following is the author's specification, preserved verbatim. The trust modules now separate credibility and reliability; game integration remains pending.
 
 ```text
 credibility: of user credibility such as suspicious or highly disruptive desyncs
@@ -29,7 +29,7 @@ cred-= decred*decred *dt *.001;
 cred= sqrt(cred+.001dt) sq
 ```
 
-TODO: save credibility persistently in a local player database.
+Local witnessed and paragon credibility stores now persist through src/trustdb.nim; swarm reports remain volatile.
 
 Author clarification: recovery is `cred = sqrt(cred sq + .001*dt)`;
 clamp credibility and decred to [0,1] when changed. Recovery is intended
@@ -117,8 +117,9 @@ The .4/.4/.2 coefficients describe the three database influences; aggregation
 inside the two remote-evidence categories must retain the original informant so
 repeated updates replace an opinion instead of counting as additional votes.
 
-Still to specify: treatment of missing database entries and how a client designates
-paragons. Persistence and dissemination of these databases are not implemented yet.
+Missing entries contribute zero. Local persistence and witness dissemination exist
+in src/trustdb.nim and src/trustsync.nim; authenticated transport, gateway-supplied
+paragon data and game integration remain pending.
 
 ## Other and swarm
 
