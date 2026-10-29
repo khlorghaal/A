@@ -35,8 +35,8 @@ proc startPty(master: ptr cint, peer, port: cint, state: cstring): cint
   {.importc: "a_start_pty", nodecl.}
 
 type Child = object
-  pid: Pid
-  fd: cint
+  pid   : Pid
+  fd    : cint
   output: string
   reaped: bool
   status: cint
@@ -90,6 +90,7 @@ proc scenario(latency, jitter: int, loss: float64, crash = false) =
       doAssert c.pid > 0, "forkpty failed"
       children.add c
     pump(children, gateway, 1)
+
     if crash:
       discard kill(children[0].pid, SIGKILL)
       var status: cint
@@ -97,17 +98,24 @@ proc scenario(latency, jitter: int, loss: float64, crash = false) =
       children[0].reaped = true
       echo "client crash: supervisor cleanup exercised"
       return
+
     var before, after: seq[Position]
-    for i in 0..<4: before.add parsePosition(readFile(outDir / ("state-" & $i)))
+    for i in 0..<4:
+      before.add parsePosition(readFile(outDir / ("state-" & $i)))
+
     let started = getMonoTime()
     for i in 0..<8:
       var key = "\e[A"
       doAssert posix.write(children[0].fd, unsafeAddr key[0], key.len) == key.len
       pump(children, gateway, 0.08)
     pump(children, gateway, 5)
+
     let elapsed = (getMonoTime() - started).inMilliseconds.float64 / 1000
-    for i in 0..<4: after.add parsePosition(readFile(outDir / ("state-" & $i)))
-    echo "8 owner inputs: displacement=", checkMotion(before, after, elapsed), " cells (ideal=8)"
+    for i in 0..<4:
+      after.add parsePosition(readFile(outDir / ("state-" & $i)))
+    echo "8 owner inputs: displacement=", checkMotion(before, after, elapsed),
+         " cells (ideal=8)"
+
     for i in 0..<4:
       children[i].drain()
       writeFile(outDir / ($latency & "-" & $i & ".ansi"), children[i].output)
