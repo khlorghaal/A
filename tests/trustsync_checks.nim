@@ -45,6 +45,7 @@ rx.kind.queue.add (1'u64, first)
 rx.receive(right)
 doAssert abs(rightDb[].swarm[("alice", "bob🙂")] - 0.2) < 0.00001
 rx.attachPositionPolicy(right)
+doAssert right.positionTrust(Peer(info: PeerInfo(id: 3), ping: -1)) == 0
 right.reportDesync(1, 1)
 rightDb[].advance(1)
 doAssert rightDb[].witnessed["alice"] < 1

@@ -21,11 +21,11 @@ the gateway recieves trust_swarm from its paragons, it does not speak with non-p
 
 paragons and friends are simply player ids. gateway allocates player accounts and unique string ids. player id is full utf including emojis and diacritics and zalgo.
 
-Current implementation: PeerId is uint64; string player IDs, account allocation,
-session authentication and trust databases are not implemented.
+Current implementation: PeerId is uint64; trust stores use NFC player IDs.
+Account allocation and session authentication are not implemented.
 
 Agent note
-├─ player IDs compare by exact Unicode sequence; do not normalize
+├─ player IDs compare in Unicode NFC; compatibility distinctions remain distinct
 └─ weight each paragon or swarm report by the reporter's combined credibility
    └─ credibility combines witnessed, paragon and swarm components with .4/.4/.2 weights
 
@@ -96,3 +96,10 @@ Session credentials and peer proofs (design; not implemented)
 Swarm storage
 ├─ current TrustDb keeps swarm observations in memory, keyed by reporter and subject
 └─ save writes witnessed and paragon stores only; swarm is not restored after restart
+
+Player IDs
+├─ current trust-store comparisons use canonical Unicode NFC; compatibility forms
+│  remain distinct; UTF-8 must be valid, nonempty and contain no NUL
+├─ preexisting database entries that normalize to the same key fail loading;
+│  reconcile the entries explicitly rather than silently choosing a value
+└─ future gateway and authenticated peer mapping must enforce the same NFC policy
