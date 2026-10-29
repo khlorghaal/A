@@ -1,5 +1,3 @@
-makefile is mid. comment it and clean.
-
 doots hash and hmap .hpp
   into nim
   git rm hash.h hmap.hpp
