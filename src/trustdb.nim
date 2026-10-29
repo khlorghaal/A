@@ -18,12 +18,15 @@ proc checkedId(id: string, value: float32): string =
 
 proc setWitness*(db: var TrustDb, id: string, value: float32) =
   db.witnessed[checkedId(id, value)] = value
+
 proc setParagon*(db: var TrustDb, id: string, value: float32) =
   db.paragon[checkedId(id, value)] = value
+
 proc setSwarm*(db: var TrustDb, reporter, subject: string, value: float32) =
   let reporter = checkedId(reporter, value)
   let subject = playerId(subject)
   db.swarm[(reporter, subject)] = value
+
 proc credibility*(db: TrustDb, subject: string): float32 =
   db.scores.getOrDefault(playerId(subject))
 

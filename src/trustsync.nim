@@ -4,10 +4,10 @@ import p2p, trust, trustdb, identity
 
 type
   TrustSync* = object
-    kind*: Kind
-    db*: ref TrustDb
+    kind* : Kind
+    db*   : ref TrustDb
     serial: uint64
-    seen: Table[tuple[source: PeerId, subject: string], uint64]
+    seen  : Table[tuple[source: PeerId, subject: string], uint64]
 
 func keyOf(id: string): uint64 =
   ## FNV-1a is stable across processes and architectures; the full ID travels too.

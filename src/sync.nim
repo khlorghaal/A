@@ -202,7 +202,8 @@ proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
       target.blend(incoming, float32(w/total))
 
     if total > 0:
-      let own = s.weight(n.selph.id, entity.id, selfTrust)
-      let pull = float64(max(0'f32, s.rate))*total/(1 + float64(own) + total)
+      let own   = s.weight(n.selph.id, entity.id, selfTrust)
+      let pull  = float64(max(0'f32, s.rate))*total /
+                  (1 + float64(own) + total)
       let alpha = float32(1 - exp(-pull*dt))
       entity.blend(target, alpha)

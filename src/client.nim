@@ -40,8 +40,9 @@ const
   colDbgFg   = 0x000000'u32
   colDbgBg   = 0x00ee00'u32
 
-var sdim*: i2
-var view*: sync_v2
+var
+  sdim*: i2
+  view*: sync_v2
 
 proc initScreen*(): bool =
   if a_init_locale() == 0 or tb_init() != 0: return false
