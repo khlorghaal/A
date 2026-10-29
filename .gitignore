@@ -5,3 +5,6 @@ a.out
 web/build
 nimcache/
 __pycache__/
+
+# Generated source images from visual annealing.
+/build/annealing/

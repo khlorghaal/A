@@ -13,8 +13,9 @@ leave it deferred. Explicitly deferred items above the boundary are also exclude
 
 Plan practical commit segments. Commit a coherent, reviewed checkpoint before
 large refactors or changes, and commit completed segments after relevant checks.
-Preserve unrelated edits. Review difficult regions visually and the full diff at
-checkpoints. Remove completed todos and document enduring details as needed.
+Preserve unrelated edits. Use the visual-annealing skill for difficult regions
+and at commit checkpoints. Inspect each revised rendering; iterate or widen the
+scope until the composition settles, then review the whole change and full diff. Remove completed todos and document enduring details as needed.
 
 After each commit follow the vacation skill briefly, then resume active work.
 Continue eligible work in order; record real blockers without inventing policy.

@@ -7,13 +7,13 @@ const BucketDepth* = 4
 type
   Slot[K, V] = object
     occupied: bool
-    key: K
-    value: V
+    key     : K
+    value   : V
   HMap*[K, V] = object
-    slots: seq[Slot[K, V]]
-    count: int
+    slots      : seq[Slot[K, V]]
+    count      : int
     growFactor*: int
-    expandPad*: int
+    expandPad* : int
 
 func keyHash[K](key: K): uint32 =
   when K is uint32 or K is uint64 or K is int32 or K is int64 or K is pointer:
@@ -66,6 +66,7 @@ proc grow[K, V](m: var HMap[K, V]) =
           fits = false
           break
     if fits: break
+
   var replacement = newSeq[Slot[K, V]](buckets * BucketDepth)
   for slot in m.slots:
     if slot.occupied:

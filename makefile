@@ -6,7 +6,8 @@ NIMFLAGS ?=
 run: build/A
 	./build/A
 
-game_sources = a.nimble nim.cfg $(wildcard src/*.nim) deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
+game_sources = a.nimble nim.cfg $(wildcard src/*.nim) \
+               deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
 
 build/A build/A-multi: $(game_sources)
 
@@ -19,11 +20,15 @@ multi: build/A
 	@if [ -n "$$TMUX" ]; then \
 		id=$$(tmux new-window -P -F "#{window_id}" -n A-test "A_PEER_ID=1 ./build/A") || exit; \
 		tmux set-option -w -t "$$id" remain-on-exit off; \
-		tmux split-window -h -t "$$id" "A_PEER_ID=2 ./build/A" || { tmux kill-window -t "$$id"; exit 1; }; \
+		tmux split-window -h -t "$$id" "A_PEER_ID=2 ./build/A" || { \
+			tmux kill-window -t "$$id"; exit 1; \
+		}; \
 	else \
 		tmux new-session -d -s A-test "A_PEER_ID=1 ./build/A" || exit; \
 		tmux set-option -w -t A-test:0 remain-on-exit off; \
-		tmux split-window -h -t A-test:0 "A_PEER_ID=2 ./build/A" || { tmux kill-session -t A-test; exit 1; }; \
+		tmux split-window -h -t A-test:0 "A_PEER_ID=2 ./build/A" || { \
+			tmux kill-session -t A-test; exit 1; \
+		}; \
 		tmux attach-session -t A-test; \
 	fi
 

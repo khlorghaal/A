@@ -27,8 +27,11 @@ func combined*(witnessed, paragon, swarm: float32): float32 =
   0.4'f32*unit(witnessed) + 0.4'f32*unit(paragon) + 0.2'f32*unit(swarm)
 
 func reliability*(pingMs: float32): float32 =
-  const points = [(30'f32, 1'f32), (80'f32, 0.8'f32),
-                  (150'f32, 0.5'f32), (400'f32, 0.05'f32)]
+  const points = [
+    ( 30'f32, 1.00'f32),
+    ( 80'f32, 0.80'f32),
+    (150'f32, 0.50'f32),
+    (400'f32, 0.05'f32)]
   if pingMs <= points[0][0]: return points[0][1]
   for i in 1..<points.len:
     let (x1, y1) = points[i]

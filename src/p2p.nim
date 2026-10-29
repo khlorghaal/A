@@ -6,16 +6,16 @@ type
   PeerId* = uint64
   Edge* = tuple[informant, subject: PeerId]
   PeerInfo* = object
-    id*: PeerId
+    id*      : PeerId
     playerId*: string # NFC identity supplied by authenticated transport
     endpoint*: string
 
   Traffic* = tuple[load, coefficient: float32]
   Peer* = ref object
-    info*: PeerInfo
-    trust*: float32
-    ping*: int64 # ms
-    up*, down*: Traffic
+    info*      : PeerInfo
+    trust*     : float32
+    ping*      : int64 # ms
+    up*, down* : Traffic
     informants*: HashSet[PeerId]
 
   Datum* = object
@@ -33,20 +33,21 @@ type
 
   EventKind* = enum joined, left, peerTable, data
   Event* = object
-    event*: EventKind
+    event* : EventKind
     source*: PeerInfo
-    peers*: seq[PeerInfo]
-    kind*: KindId
-    datum*: Datum
+    peers* : seq[PeerInfo]
+    kind*  : KindId
+    datum* : Datum
 
   Net* = object
-    selph*: PeerInfo
-    peers*: Table[PeerId, Peer] # known, connected or not
+    selph*          : PeerInfo
+    peers*          : Table[PeerId, Peer] # known, connected or not
     near*, far*, all*: seq[Peer] # disjoint near/far; all is their union
-    kinds*: Table[KindId, Kind]
-    pingLimit*: int64
+    kinds*          : Table[KindId, Kind]
+    pingLimit*      : int64
+
     positionTrust*: proc(p: Peer): float32
-    recordDesync*: proc(p: Peer, severity: float32)
+    recordDesync* : proc(p: Peer, severity: float32)
     rng: Rand
 
 var # transport; bind before use, no reentry

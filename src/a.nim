@@ -35,9 +35,9 @@ var
   ships       : array[shipMax, Ship]
   shipsEnd    : int
 
-  localPeer   = getEnv("A_PEER_ID", "1").parseBiggestUInt.uint64
-  net         = initNet(PeerInfo(id: localPeer), 1)
-  replication = initSync(net, 1)
+  localPeer    = getEnv("A_PEER_ID", "1").parseBiggestUInt.uint64
+  net          = initNet(PeerInfo(id: localPeer), 1)
+  replication  = initSync(net, 1)
 
 template liveShips: untyped = ships.toOpenArray(0, shipsEnd - 1)
 
@@ -67,13 +67,15 @@ proc allocShip(): ptr Ship =
   inc shipsEnd
 
 proc initShips() =
+  # Shared initial scenario; peer 1 owns these ships.
   for i in 0..<7:
     let ship = allocShip()
     ship[] = Ship(
-      id : genUid(), hp: 16, cd: 0, msl: 255,
+      id : genUid(),
+      hp : 16, cd: 0, msl: 255,
       chr: Grapheme("A"), fac: 0xeeeeee,
       kin: sync_k2(p: sv(float32(i*2 - 8), float32(i mod 2*3))))
-    replication.owners[ships[i].id] = 1 # shared initial scenario, peer 1 owns it
+    replication.owners[ships[i].id] = 1
 
 proc act(a: Action) =
   case a
