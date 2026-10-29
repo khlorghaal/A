@@ -21,3 +21,7 @@ Use concise task phrases without redundant "implement" prefixes. Remove verified
 completed entries and move enduring details into docs when warranted. Commit
 reviewed checkpoints before large refactors and changes, and completed segments
 with their relevant verification.
+
+For Codex-authored Git commits, use author and committer name Codex and email
+codex@users.noreply.github.com. Preserve other authors' attribution when
+replaying their work.
