@@ -1,6 +1,5 @@
 doots hmap .hpp
   into nim; preserve unbounded Monte Carlo expansion and padding
-  git rm hmap.hpp after the port is verified
 
 gateway
   auth and gateway as the same server.
