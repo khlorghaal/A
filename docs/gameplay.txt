@@ -3,3 +3,7 @@ gameplay
 ├─ arrows and on-screen directional buttons move one cell per press
 ├─ camera tracks the local ship using an offset
 └─ hit adjudication and defender-favoring rules remain unimplemented
+
+weapon hit reports
+├─ a weapon hit is not owned like an entity state update
+└─ hit resolution and defender-favoring rules remain deferred
