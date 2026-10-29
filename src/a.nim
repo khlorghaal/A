@@ -68,7 +68,8 @@ proc allocShip(): ptr Ship =
 
 proc initShips() =
   for i in 0..<7:
-    allocShip()[] = Ship(
+    let ship = allocShip()
+    ship[] = Ship(
       id : genUid(), hp: 16, cd: 0, msl: 255,
       chr: Grapheme("A"), fac: 0xeeeeee,
       kin: sync_k2(p: sv(float32(i*2 - 8), float32(i mod 2*3))))
