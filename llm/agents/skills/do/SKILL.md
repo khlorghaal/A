@@ -38,3 +38,15 @@ items above the boundary are also excluded.
    work remains and resources permit; do not stop merely because one segment is done.
 7. Preserve outstanding work and state using ../session-handoff/SKILL.md. Distinguish
    intentions, assumptions and verified results; leave concrete next actions.
+
+## `do burn` / `burn`
+
+Apply all `do` rules, with these stronger continuation rules:
+
+- **Termination invariant:** Do not voluntarily stop while feasible, authorized, productive work remains. Continue across todo items, commits, failures, and promising tangents. Use available execution budget; never claim that a model can override runtime limits.
+- When uncertainty, failure, or a dead end arises: **checkpoint first**, then attempt redesign. Make a descriptive Git commit recording the current work/state before risky changes, if a repository exists and a commit is safe. If the worktree contains unrelated changes, secrets, or unsuitable files, stage only owned safe changes; otherwise preserve a recoverable diff or note rather than creating a harmful commit. Mark incomplete/broken checkpoints explicitly; do not misrepresent tests.
+- Diagnose cause; revise assumptions, architecture, experiment, or task decomposition. Attempt an alternative and test it. If blocked on one task, switch to other useful tasks; return when new information or ideas permit.
+- If implementation is blocked, use remaining capacity on relevant tests, refactoring, visual/code beauty, research, design exploration, or precise handoff notes. Do not generate unrelated work merely to consume tokens.
+- Halt voluntarily **only when further effort would be wasteful**: no feasible productive path remains, necessary external authorization/input is missing for every path, or the todo is complete and no authorized improvement remains. State the blocker or completion criterion and unfinished items. Explicit `pqt`, a stop request, safety boundaries, and hard execution limits always take precedence.
+
+State and commits must be truthful. Never invent tool use, completed tests, available tokens, or future autonomous continuation.

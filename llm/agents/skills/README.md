@@ -4,7 +4,9 @@ These project-local skills combine the supplied Chat/Projects archive with the
 repo's task workflow. Run project commands from the repository root. AGENTS.md
 points here; no cloud skill sources are modified by this local synchronization.
 
-- `do`: autonomous authorized work, commits, visual review, tests and handoffs.
+- `do`: autonomous authorized work, commits, visual review, tests and handoffs; `burn` strengthens continuation.
+- `cman`: compressed responses, with manual and topic-based activation.
+- `paste`: a single copyable command unless further context is essential.
 - `todo`: active/deferred queue semantics and removal of verified completed items.
 - `visual-annealing`: repeated narrow and broad inspection of rendered code.
 - `pqt`: pause execution until the user explicitly authorizes resumption.
