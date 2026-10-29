@@ -4,7 +4,7 @@ gateway
   gateway authoritates peer identities and session tokens.
   only paragons contact the gateway after signin
 
-  users do not ssh to gateway, the client handles
+-= users do not ssh to gateway, the client handles
 gateway exclusively uses ssl
 client connects to gateway with username. if gw does not know user, indicates so to client, client asks user for gpg pubkey which it gives to gw to store and enter with username. client may then login to gw by decrypting their session token with their privkey.
 ses tok is used for dpop without contacting gw, im unsure how that works, document it well
