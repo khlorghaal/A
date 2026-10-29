@@ -40,7 +40,7 @@ clean:
 
 multi_agentvm: build/A-multi build/gateway
 	nim c $(NIMFLAGS) --out:build/multi-checks -r tests/multi_checks.nim
-	python3 tools/multi_agentvm.py
+	nim c $(NIMFLAGS) --out:build/multi-terminal -r tests/multi_terminal.nim
 
 build/A-multi: tests/socket_gateway.nim tests/sim_socket.nim
 	mkdir -p build

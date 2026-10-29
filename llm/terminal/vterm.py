@@ -15,7 +15,7 @@ import termios
 
 import pyte
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 COLORS = dict(zip(
     ['black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white',
      'brightblack', 'brightred', 'brightgreen', 'brightbrown', 'brightblue',
