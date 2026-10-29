@@ -1,6 +1,9 @@
 build and inspection
 ├─ initialize deps/termbox2 and install Nimble, C, Clang and GLib runtime dependencies
-├─ make builds; make check checks; make test runs tests; make run starts the game
+├─ make / make run starts the client; make build/A builds it without running
+├─ make test runs game, sync, hash/map and trust checks without tmux
+├─ make check builds the client and checks the network/sync modules
+├─ make multi opens an interactive two-client tmux session
 ├─ after changing termbox headers, rebuild Futhark imports with make NIMFLAGS=-d:opirRebuild
 ├─ make multi_agentvm runs four PTY clients through a test-only simulated network
 │  ├─ tests/sim_socket.nim schedules delay, jitter and loss
@@ -8,10 +11,7 @@ build and inspection
 └─ llm/terminal/vterm.py provides PTY key, mouse, resize and capture commands
    └─ captures are reconstructions; inspect raw terminal output for shaping issues
 
-Build targets
-├─ make run starts the client; make multi opens an interactive tmux pair
-├─ make test runs automated game, sync and trust checks without tmux
-├─ make check builds the client and checks the network/sync modules
-├─ make multi_agentvm runs deterministic network checks and four real PTYs
+Build behavior
 ├─ NIMFLAGS applies to every compilation target
-└─ game binaries depend on src/*.nim; gateway is currently only a test relay
+├─ game binaries depend on src/*.nim
+└─ build/gateway is the test relay; the identity gateway is still pending

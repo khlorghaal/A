@@ -11,21 +11,19 @@ type
 func validValue(x: float32): bool =
   classify(x) notin {fcNan, fcInf, fcNegInf} and x >= 0 and x <= 1
 
-proc check(id: string, value: float32) =
-  discard playerId(id)
+proc checkedId(id: string, value: float32): string =
+  result = playerId(id)
   if not validValue(value):
-    raise newException(ValueError, "invalid player ID or credibility")
+    raise newException(ValueError, "invalid credibility")
 
 proc setWitness*(db: var TrustDb, id: string, value: float32) =
-  check(id, value)
-  db.witnessed[playerId(id)] = value
+  db.witnessed[checkedId(id, value)] = value
 proc setParagon*(db: var TrustDb, id: string, value: float32) =
-  check(id, value)
-  db.paragon[playerId(id)] = value
+  db.paragon[checkedId(id, value)] = value
 proc setSwarm*(db: var TrustDb, reporter, subject: string, value: float32) =
-  check(reporter, value)
-  check(subject, value)
-  db.swarm[(playerId(reporter), playerId(subject))] = value
+  let reporter = checkedId(reporter, value)
+  let subject = playerId(subject)
+  db.swarm[(reporter, subject)] = value
 proc credibility*(db: TrustDb, subject: string): float32 =
   db.scores.getOrDefault(playerId(subject))
 
@@ -52,8 +50,7 @@ proc refresh*(db: var TrustDb) =
 
 proc desync*(db: var TrustDb, id: string, severity: float32) =
   ## Severity is per discrepancy; packet-independent values need their own rule.
-  check(id, severity)
-  let id = playerId(id)
+  let id = checkedId(id, severity)
   var c = Credibility(value: db.witnessed.getOrDefault(id),
                       discredit: db.discredit.getOrDefault(id))
   c.desync(severity)
@@ -80,8 +77,7 @@ proc readDb(path: string): Table[string, float32] =
     if node.kind notin {JFloat, JInt}:
       raise newException(ValueError, "invalid credibility")
     let value = node.getFloat().float32
-    check(id, value)
-    let normalized = playerId(id)
+    let normalized = checkedId(id, value)
     if normalized in result:
       raise newException(ValueError, "duplicate normalized player ID in " & path)
     result[normalized] = value
@@ -90,7 +86,7 @@ proc writeDb(path: string, values: Table[string, float32]) =
   var sections: Sections
   sections["trust"] = initTable[string, JsonNode]()
   for id, value in values:
-    check(id, value)
+    discard checkedId(id, value)
     sections["trust"][id] = %value
   writeSections(path, sections)
 
