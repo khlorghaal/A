@@ -13,10 +13,13 @@ Keep docs/ human-readable, presentable, and organized by topic (for example, net
 Use visual-review iterations in proportion to the remaining token budget; reserve enough for tests, fixes, and reporting. See llm/style.md for observations from doot.
 
 Todo workflow: docs/todo.txt is authoritative; llm/todo.txt is only a pointer.
-Follow .agents/skills/todo/SKILL.md and .agents/skills/do/SKILL.md for local
+Follow llm/agents/skills/todo/SKILL.md and llm/agents/skills/do/SKILL.md for local
 refinements to the cloud skills. A standalone defer>>> or Deferred>>> marker
 (case-insensitive) defers every subsequent line, regardless of headings or
-indentation. Do not execute explicitly deferred entries above the marker either.
+indentation. Do not execute explicitly deferred entries above the marker either. Deferred
+means leave the task for later: do not implement, research, plan or otherwise
+work on it until the user explicitly brings it back into scope. Authentication
+is deferred, including gateway login, credentials and authenticated peer identity.
 Use concise task phrases without redundant "implement" prefixes. Remove verified
 completed entries and move enduring details into docs when warranted. Commit
 reviewed checkpoints before large refactors and changes, and completed segments
@@ -25,3 +28,5 @@ with their relevant verification.
 For Codex-authored Git commits, use author and committer name Codex and email
 codex@users.noreply.github.com. Preserve other authors' attribution when
 replaying their work.
+
+Project agent skills live under llm/agents/skills/, not .agents/.
