@@ -32,3 +32,6 @@ replaying their work.
 Project agent skills live under llm/agents/skills/, not .agents/.
 
 Use LF line endings for project text files; the user does not want CRLF.
+
+The user uses the fish shell (including on Termux). Give fish syntax for shell
+commands and persistent environment changes unless they request another shell.
