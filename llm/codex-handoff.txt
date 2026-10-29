@@ -1,0 +1,48 @@
+A → Codex handoff
+├─ user: @khlorghaal; A is the glyph of a ship
+│  ├─ terse responses, compact data-oriented code and aligned columns
+│  ├─ visual annealing is a mode of thought: render code, revise 3–20 lines,
+│  │  rerender; widen scope when necessary, reserving time for tests
+│  └─ llm/ is the agent's open notebook; docs/ is topic-organized tree notation
+├─ workflow
+│  ├─ preserve author text after docs+= / todo+= verbatim; add clarification separately
+│  ├─ remove completed todo items and move enduring details to docs
+│  ├─ pqt means pause for questions and thoughts until the user says proceed
+│  ├─ user asked for sustained work, no premature stops, small commits and tests
+│  ├─ auth last; defer friend trust, firewall, decentralized servers, excommunication
+│  └─ no PR or push authorized currently; user requested a portable local handoff
+├─ current state
+│  ├─ master contains 5 local commits past origin/master; worktree also has changes
+│  ├─ workspace rolled back after a long run; original commits 3af8f73, f44af6c,
+│  │  a0169cd and later uncommitted work are unavailable in this checkout
+│  ├─ 6738b00 and 76de3c9 reconstruct some of that work from prior transcript
+│  ├─ trust formulas, persistent local witness/paragon and volatile swarm,
+│  │  witness dissemination and policy hooks exist and passed make test
+│  ├─ game does not yet initialize or use those trust components; no live auth/P2P
+│  ├─ prior measured RTT four-client run: eight owner inputs settled at ~4–5 cells
+│  │  because peers re-report correlated estimates; reproduction fixture was lost
+│  └─ older llm/todo.txt and docs can describe pre-recovery state; compare source
+├─ pending work
+│  ├─ connect trust to game, actual authenticated peer transport, identity mapping
+│  ├─ resolve correlated echoes without silently changing the authority-free model
+│  ├─ rebuild four-client matrix: good, moderate, each single heavily lagged peer
+│  │  against good and moderate peers; per-client temporary DB; test crash cleanup
+│  ├─ hit adjudication, defender-favoring rules, jitter/loss and ammo severity unspecified
+│  └─ gateway, TLS/OpenPGP registration and signed session proof were lost
+├─ lost gateway prototype, retained design memory
+│  ├─ TLS with verified server name; GPG key possession for registration/login
+│  ├─ gateway-issued Ed25519 credential bound exact player ID, ephemeral session
+│  │  public key and expiry; proof bound credential + one-use nonce + TLS exporter
+│  ├─ peer proof is not standard DPoP; it was not wired to production transport
+│  ├─ accounts default to .5, exact UTF-8 IDs; per-reporter witness, volatile swarm
+│  ├─ only paragons can contact gateway after login; no friend trust for now
+│  └─ GPG processing blocked the async loop; prototype had no production hardening
+├─ constraints
+│  ├─ account/peer identities compare exact Unicode sequences without normalization
+│  ├─ no extrapolation of player intent; advance position using known velocity and age
+│  ├─ transport must authenticate source-to-player mapping and reject old-session data
+│  └─ current TOML parser accepts generated scalar-table subset, not full TOML syntax
+└─ archive
+   ├─ includes repository .git, submodule, uncommitted edits, workspace patches and tools
+   ├─ VM-specific toolchains and absolute paths may not work on the destination
+   └─ no claim that the missing commits or the old authentication tests are restored

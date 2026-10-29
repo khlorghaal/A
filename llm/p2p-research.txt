@@ -1,0 +1,126 @@
+A: chaotic replication for action gameplay
+2026-10-28 — research and design assessment
+
+Status: the analysis below describes the position-only baseline. The subsequent first kinetic pass is documented in synchronization.md; it adds sample-age projection and stronger, bounded owner preference, without intent extrapolation.
+
+Conclusion
+
+Embrace irregular delivery as the ordinary execution model. Simulate now, consume whatever useful evidence arrived, replace obsolete evidence, and continue. Avoid reconstructing a perfectly ordered stream when the gameplay only needs a good current estimate. This can produce small code and bounded queues. It does not make arbitrary state blending a valid merge rule.
+
+A's useful core is a stochastic dissemination graph plus continuous local simulation. Keep that. Improve the semantics of the small records passing through it before adding a large coordination framework. The strongest simplification may be gameplay that remains coherent under approximate knowledge: ships with bounded acceleration, projectiles with travel time, local interactions and nonexclusive ambient behavior.
+
+Evidence and scope
+
+[1] Glenn Fiedler, State Synchronization (2015): simulation on both ends, partial state updates, priority accumulation, jitter handling, and visual error offsets. It demonstrates why full cross-machine determinism is unnecessary for this technique, while highlighting correction artifacts.
+https://gafferongames.com/post/state_synchronization/
+
+[2] Timothy Ford, Overwatch Gameplay Architecture and Netcode, Blizzard/GDC 2017. The official abstract explicitly connects ECS, determinism, responsiveness and precision. The public landing page was intermittently under maintenance; I did not view the complete video or verify its detailed numerical settings.
+https://www.gdcvault.com/play/1024001/
+Official GDC video: https://www.youtube.com/watch?v=W3aieHjyNvw
+
+[3] Dan Reed, Networking Scripted Weapons and Abilities in Overwatch, Blizzard/GDC 2017. Statescript represents weapon/ability state machines and automates prediction and replication, reducing networking work for gameplay authors.
+https://gdcvault.com/play/1024041/Networking-Scripted-Weapons-and-Abilities
+
+[4] Blizzard support explanation, Better Games With Higher Ping (2019). It describes bounded lag compensation and favoring a shooter's view, with mitigation taking precedence. This is a support explanation, not a complete specification or a claim about present Overwatch 2 internals.
+https://us.forums.blizzard.com/en/overwatch/t/better-games-with-higher-ping/412387
+
+[5] Fiedler, Deterministic Lockstep (2014): input-only replication, exact repeatability, waiting for required input, and floating-point portability difficulties.
+https://gafferongames.com/post/deterministic_lockstep/
+
+[6] GGPO's own description: predict unavailable remote inputs, save state, and replay after incorrect predictions in a deterministic engine.
+https://www.ggpo.net/
+
+[7] Factorio developer notes: the advantages and constraints of input-based simulation over large worlds, followed by a transport architecture rewrite. The 2015 P2P design is historical, not its current topology.
+https://www.factorio.com/blog/post/fff-76
+https://www.factorio.com/blog/post/fff-147
+
+[8] Colyseus, NSDI 2006: weakly consistent replicas and spatial prefetching, but updates serialize at one primary per object. Its distributed FPS evaluation is relevant precedent, not evidence for authority-free consensus or arbitrary MMO scale.
+https://www.usenix.org/legacy/event/nsdi06/tech/full_papers/bharambe/bharambe_html/
+
+Everything below is analysis of A or a proposal, unless attributed above.
+
+1. Disorder is a transport property; chaos is a design choice
+
+A receiver need not reproduce packet order. For replaceable fields, keep one latest version per original source/entity and ignore older versions. Reordering then costs a comparison, loss usually costs temporary error, and a newer full sample repairs missing older samples without retransmitting them. Bound the number of admitted sources and entities as well as queue length. Do not let a packet buffer grow to preserve history that the application never needs.
+
+Keep provenance through relays: forwarding an observation must not turn it into a new independent observation. Version it with an origin session/epoch and monotonic revision. Otherwise a restart can be rejected forever by old watermarks, or relays can amplify one observation into a fictitious majority. Periodic full refreshes make a small implementation easier than delta chains; introduce acknowledged baselines only after measuring a bandwidth problem.
+
+A probability of eventually sending is not a deadline. Independently sampling an entity with probability p each step leaves an omission probability (1-p)^n after n steps. At 40 steps/s and p=.1, mean interval is .25s, but the probability of no attempt in one second is about 1.48%. For 99% of attempt gaps to be at most 100ms (four opportunities), p must be at least .684. Loss worsens delivered freshness. These calculations assume independent trials and a persistent eligible record; they do not describe burst loss.
+
+The small practical modification: stochastic sampling for ordinary work, plus one age cap or an accumulated urgency for important records. A byte budget must limit sends. Sampling alone is not congestion control.
+
+2. What should merge simply?
+
+Position/velocity observation: a replaceable sample, with origin, revision and simulation time. Compare observations at approximately the same time by bounded extrapolation; do not average an old position with a current one as though simultaneous. Without clock estimation, receiver-time aging bounds extrapolation after receipt but cannot remove transit-time staleness. Honest smoothing cannot reconstruct information that never arrived.
+
+Held input: persistent state such as thrust, aim or firing-held. Repeat it; a missing update temporarily holds the previous intention. This suits lossy delivery if the gameplay tolerates a bounded release delay. Put a lifetime on it so a disconnected peer cannot thrust or fire forever.
+
+A completed action: a monotonic action number with identity. Repeating the number is harmless; missing several numbers must have an explicit interpretation. A counter does not preserve individual shots' aim/time, does not order actions from different authors, and needs an epoch at restart. If those details matter, keep a bounded set/ring of action records and deduplicate by ID. Avoid converting a toggle into an event: two toggles between samples are indistinguishable from none.
+
+Presence/deletion: explicit generation and a tombstone lifetime or membership rule. Omitting an entity from a sampled packet cannot mean deletion.
+
+Damage/currency/unique pickup: averaging independent totals can invent or erase outcomes. One can deliberately permit disputed hits or approximate resources, but that is a gameplay rule. Monotonic per-author damage contributions can merge by per-author maxima if accepted damage is irrevocable and authors cannot reset their epochs; validation, healing and retraction require further rules. This is a possible narrow simplification, not a universal health protocol.
+
+3. The present rubberband has a concrete action-game problem
+
+The implementation keeps one report per sender/entity, forms their weighted centroid, and pulls local state toward it using elapsed time. This removes straightforward duplicate-packet amplification. But peers republish states already influenced by peers. Echoed estimates become distinct weighted observations even though their information is correlated.
+
+An owner bonus of +.5 adds resistance; it is not an anchor. One new local movement can be diluted into a compromise with several stale remote copies. The four-client test demonstrated precisely this: eight Up inputs converged to substantially less than eight units of shared movement. That is acceptable evidence of convergence, not evidence of input fidelity. A larger gain can erase the new input faster.
+
+Also, the correction rate currently scales with total incoming trust. Changing neighbor count changes response even if all neighbors report the same target. Normalize aggregate pull if degree-independent feel is desired; choose source credibility separately from correction half-life. Derive alpha = 1 - exp(-ln(2)*dt/h) from an explicit half-life h. This controls response, not agreement or truth.
+
+Possible small alternatives, preserving the authority-free objective:
+- Replicate time-limited driving intentions and simulate them locally; use position reports as occasional error evidence.
+- Preserve a locally originated movement contribution while assimilating remote estimates, with provenance so it cannot be counted repeatedly.
+- Make the compromise itself intentional gameplay, if entities are collectively controlled. Then measure player controllability rather than presenting consensus as ownership.
+
+None can provide unbounded local sovereignty and symmetric override at once. State the intended compromise first.
+
+4. Overwatch: useful lesson, different source of truth
+
+Ford's talk treats determinism as a tool for responsive, precise prediction [2]. Reed's StateScript work puts prediction and replication behind authored weapon/ability states [3]. Blizzard's support explanation describes a server resolving competing views with game-specific lag-compensation rules [4]. This is not a gossip-based averaging scheme.
+
+The transferable design lesson is to give data a declared networking meaning so individual abilities do not each reinvent transport. A's sync field types are already moving in that direction. Add distinct semantics only where they earn their cost: persistent control, replaceable sample, identified action. Deterministic local evolution between imperfect updates is compatible with irregular communication.
+
+Blizzard's precedent does not imply A needs its entire prediction/reconciliation machinery. Nor does it supply A's missing referee: a trust-weighted peer population must choose its own dispute semantics. I have deliberately not copied claimed Overwatch frame rates, rewind limits or buffer algorithms from third-party transcripts.
+
+5. Deterministic contrast
+
+Lockstep [5,7] simplifies what crosses the network: distribute inputs and reproduce the world. Its attraction increases with many simulated objects and few independent players. It requires identical initial state and a specified input order; a missing required input delays advancement. Small floating-point or execution-order differences become correctness faults rather than harmless approximation. One million entities is not one million independent players; input volume and CPU still matter.
+
+Even lockstep can receive packets in arbitrary order: it stages them by input frame. The restriction is on the order and identity of simulated inputs, not physical packet arrival. Conversely, a nondeterministic game may still need strict ordering for a particular transaction.
+
+Rollback [6] moves waiting out of the immediate response: predict missing input, then restore and replay when wrong. This adds state-history, replay and side-effect management. Determinism is valuable inside a small interaction even if a large world is not globally deterministic.
+
+State synchronization [1] tolerates imperfect simulation agreement because state samples repair divergence. It trades replay machinery for bandwidth, error handling and approximate outcomes. A's stochastic multi-writer blend is another step: even the target state may be negotiated. Thus convergence speed, information age and semantic validity are distinct questions.
+
+6. Simple per-peer scaling for action gameplay
+
+Start with a byte allowance per link, a capped total upload allowance, and a small relevance value per entity/peer. Increase urgency with sample age and predicted trajectory error; reduce it for resting or remote objects. Give directly interacting peers short paths and more frequent updates, while a low-rate stochastic background preserves discovery. Do not route combat through a long random walk when a direct edge is available.
+
+For constant-velocity prediction, neglected acceleration a over an update age t contributes roughly a*t*t/2 position error. If tolerable error is e, t <= sqrt(2e/a) is a useful engineering bound under that model. For a=20 units/s^2 and e=.1 unit, t is about .1s. That age budget includes transport, scheduling and buffering, not just nominal send frequency. Teleports and collisions violate this smooth-motion bound; signal them explicitly or accept visible correction.
+
+Illustrative budget only: 32 relevant entities * 24 payload bytes * 30 updates/s * 6 neighbors = 138,240B/s upload, before headers and duplication. Interest sets and fan-out determine scalability more than whether selection uses a clever random distribution. Aggregate records into packets; do not equate a datum with a UDP packet.
+
+A simple sampler need not sort the whole world. Walk a compact candidate set from a rotating cursor, accumulate urgency, and try records until the packet byte budget is exhausted. A bounded scan and an age cap can be easier to reason about than a globally ranked scheduler. Measure starvation and freshness tails before deciding that the extra scheduling machinery is useful. This is a proposed implementation direction, not a measured optimization.
+
+Keep simulation rate, send rate and render rate independent. Use dt in both physical integration and sampling probability: p(dt)=1-exp(-lambda*dt) preserves a desired attempt hazard across frame rates. The current drift and fixed-per-tick P2P sampling do not yet satisfy that property. Batch once per frame and process capped work, rather than performing expensive scans/decode for each field or packet.
+
+7. Where approximation is friendly and where it fights physics
+
+Separated ships and background motion are a favorable first target. Spatially distributed populations can use local relevance sets. A dense battle remains expensive because many entities become mutually relevant. An MMO cannot generally keep per-client cost constant while allowing everyone to interact precisely with everyone at once.
+
+Contacts, coupled rigid bodies and conservation laws are less forgiving. Blending individually plausible body positions can place them inside walls or each other. Fiedler's physics example corrects simulation state and smooths only the rendered error [1]. For A, compare that approach with continuous simulation nudging under actual collisions; do not assume a visually smooth correction is physically valid.
+
+Colyseus [8] is evidence that weak replicas and prefetching can support distributed action games. It still retains a primary for each object. Retaining A's no-authority goal leaves additional semantic work; this difference should stay explicit rather than hidden behind similar vocabulary.
+
+8. Next experiments, before more architecture
+
+- Constant thrust, sharp turn and release: measure remote age, trajectory error, lost movement and owner control, not just final convergence.
+- Repeat at 2, 4, 16 neighbors with the same total byte budget. Test whether degree changes feel or only accuracy.
+- Compare pure random sampling against an age cap and an accumulated-urgency sampler. Include burst loss and asymmetric delay.
+- Compare position-only blending against velocity/intention replication and simulation correction plus visual offsets.
+- Test source echo, restart epochs, repeated actions, death/revival and late joining.
+- Add bounded queues and counters for generated/delivered/dropped bytes before compression work.
+
+The goal is not perfect order everywhere. It is a small set of records whose meaning survives loss, duplication and reordering, coupled to gameplay that degrades continuously when information gets old.

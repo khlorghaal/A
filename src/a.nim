@@ -8,7 +8,7 @@ when defined(simSockets):
 type
   Ship = object
     id     : Uid
-    p      : sync_v2
+    kin    : sync_k2
     trigger: sync_b
     hp     : int32
     cd     : int32
@@ -68,35 +68,37 @@ proc allocShip(): ptr Ship =
 
 proc initShips() =
   for i in 0..<7:
-    allocShip()[] = Ship(
+    let ship = allocShip()
+    ship[] = Ship(
       id : genUid(), hp: 16, cd: 0, msl: 255,
       chr: Grapheme("A"), fac: 0xeeeeee,
-      p  : sv(float32(i*2 - 8), float32(i mod 2*3)))
+      kin: sync_k2(p: sv(float32(i*2 - 8), float32(i mod 2*3))))
     replication.owners[ships[i].id] = 1 # shared initial scenario, peer 1 owns it
 
 proc act(a: Action) =
   case a
-  of actU: ships[0].p += sv( 0,-1)
-  of actL: ships[0].p += sv(-1, 0)
-  of actR: ships[0].p += sv( 1, 0)
-  of actD: ships[0].p += sv( 0, 1)
+  of actU: ships[0].kin.p += sv( 0,-1)
+  of actL: ships[0].kin.p += sv(-1, 0)
+  of actR: ships[0].kin.p += sv( 1, 0)
+  of actD: ships[0].kin.p += sv( 0, 1)
   of actF: ships[0].trigger.set(not ships[0].trigger.value)
 
 proc stepShips(dt = 0.025) =
   for i in 0..<shipsEnd:
-    when defined(simSockets): continue
-    case hrng() mod 5
-    of 0: ships[i].p += sv( 1, 0)
-    of 1: ships[i].p += sv(-1, 0)
-    else: discard
+    when not defined(simSockets):
+      case hrng() mod 5
+      of 0: ships[i].kin.v = sv( 40, 0)
+      of 1: ships[i].kin.v = sv(-40, 0)
+      else: ships[i].kin.v = sv(  0, 0)
+    ships[i].kin.drift(dt)
 
   replication.reconcile(net, liveShips, dt)
   replication.publish(liveShips)
 
-  view = ships[0].p
+  view = ships[0].kin.p
   for i in 0..<shipsEnd:
     let s = ships[i]
-    draw(s.p, Cell(g: s.chr, fg: s.fac, bg: colBaseBg))
+    draw(s.kin.p, Cell(g: s.chr, fg: s.fac, bg: colBaseBg))
 
 proc main(): int =
   if not initScreen(): return 1
@@ -104,6 +106,7 @@ proc main(): int =
 
   initShips()
   when defined(simSockets):
+    ships[0].kin.v = sv(getEnv("A_TEST_VX", "0").parseFloat.float32, 0)
     net.bindClient(Port(getEnv("A_GATEWAY_PORT").parseInt))
   replication.publish(liveShips)
   t0 = nowUs()
@@ -115,7 +118,7 @@ proc main(): int =
     let dt = float64(started - previous)/float64(sec)
     previous = started
 
-    if not gather.isNil: net.tick()
+    if not gather.isNil: net.tick(dt)
     screenSize()
     var mouse: i2 = v(-1,-1)
     var ev: TbEvent
@@ -139,7 +142,7 @@ proc main(): int =
     stepShips(dt)
     when defined(simSockets):
       let statePath = getEnv("A_STATE_FILE")
-      writeFile(statePath & ".tmp", $ships[0].p.x & " " & $ships[0].p.y)
+      writeFile(statePath & ".tmp", $ships[0].kin.p.x & " " & $ships[0].kin.p.y)
       moveFile(statePath & ".tmp", statePath)
 
     if dbgDur > 0:

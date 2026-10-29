@@ -27,7 +27,7 @@ tx.owners[id] = 1
 rx.owners[id] = 1
 rx.publish(b) # registers the known entity IDs; updates cannot create entities
 
-doAssert rx.weight(1, id, 0.25) == 0.75
+doAssert rx.weight(1, id, 0.25) == 4.25
 doAssert rx.weight(2, id, 0.25) == 0.25
 
 # Exercise the actual P2P kind, transmission sampling and incoming queue.
@@ -51,6 +51,16 @@ doAssert b[0].pos.x > 9 and b[0].pos.x < 10
 doAssert b[0].trigger.value
 doAssert float32(b[0].scalar) > 5
 doAssert b[0].health == 99 # unmarked fields stay local
+
+block senderAge:
+  var age = 0.0
+  let send = sendDatum
+  sendDatum = proc(p: Peer, k: Kind, d: Datum) = age = d.age
+  left.tick(0.075)
+  doAssert abs(age - 0.075) < 0.000001
+  left.tick(0.025)
+  doAssert abs(age - 0.1) < 0.000001
+  sendDatum = send
 
 proc trajectory(steps: int, owner: PeerId, trust: float32,
                 duplicates = 1): float32 =
@@ -92,3 +102,83 @@ rx.reconcile(right, b, 0.5)
 doAssert not b[0].trigger.value
 
 echo "sync checks passed"
+
+block kineticSamples:
+  type Body = object
+    id : Uid
+    kin: sync_k2
+    tag: int
+  var n = network(2, 1)
+  var tx = initSync(n, 8)
+  var source = @[Body(id: id, kin: sync_k2(p: sv(0,0), v: sv(10,0)))]
+  tx.publish(source)
+  var sample = tx.kind.row[0]
+  sample.age = 0.2
+
+  var rx = initSync(n, 9)
+  rx.horizon = 1
+  var bodies = @[Body(id: id, kin: sync_k2(p: sv(2,0), v: sv(10,0)), tag: 17)]
+  rx.publish(bodies)
+  rx.kind.queue.add (1'u64, sample)
+  rx.reconcile(n, bodies, 0.01)
+  doAssert abs(bodies[0].kin.p.x - 2) < 0.0001 # transit age included
+  for i in 0..<10:
+    bodies[0].kin.drift(0.05)
+    rx.reconcile(n, bodies, 0.05)
+  doAssert abs(bodies[0].kin.p.x - 7) < 0.0001 # cached age also included
+  doAssert bodies[0].tag == 17
+
+  # A stop is a new velocity sample, not an inferred intention.
+  source[0].kin = sync_k2(p: sv(7,0), v: sv(0,0))
+  tx.publish(source)
+  sample = tx.kind.row[0]
+  sample.age = 0.15
+  rx.kind.queue.add (1'u64, sample)
+  rx.reconcile(n, bodies, 0.25)
+  doAssert bodies[0].kin.v.x < 10
+
+  # Motion reports beyond the horizon are discarded, not frozen as targets.
+  var capped = initSync(n, 10)
+  capped.rate = 1000
+  bodies[0].kin = sync_k2()
+  capped.publish(bodies)
+  tx.publish(@[Body(id: id, kin: sync_k2(v: sv(10,0)))])
+  sample = tx.kind.row[0]
+  sample.age = 0.25
+  capped.kind.queue.add (1'u64, sample)
+  capped.reconcile(n, bodies, 0.1)
+  doAssert abs(bodies[0].kin.p.x - 2.5) < 0.0001
+
+  let projected = bodies[0].kin
+  sample.age = 1
+  inc sample.revision
+  capped.kind.queue.add (1'u64, sample)
+  capped.reconcile(n, bodies, 0.1)
+  doAssert bodies[0].kin == projected
+
+  # Malformed ages cannot poison state or advance the revision watermark.
+  let old = bodies[0].kin
+  for age in [-1.0, Inf, NaN]:
+    sample.age = age
+    inc sample.revision
+    capped.kind.queue.add (1'u64, sample)
+    capped.reconcile(n, bodies, 0)
+    doAssert bodies[0].kin == old
+
+  # Finite coordinates may still overflow during projection.
+  tx.publish(@[Body(id: id, kin: sync_k2(p: sv(3.4e38,0), v: sv(3.4e38,0)))])
+  sample = tx.kind.row[0]
+  sample.revision = 100
+  sample.age = 0.25
+  capped.kind.queue.add (1'u64, sample)
+  capped.reconcile(n, bodies, 0.1)
+  doAssert bodies[0].kin == old
+
+  var expired = initSync(n, 11)
+  expired.publish(bodies)
+  sample.age = expired.ttl
+  expired.kind.queue.add (1'u64, sample)
+  expired.reconcile(n, bodies, 0.1)
+  doAssert bodies[0].kin == old
+
+  echo "kinetic sample checks passed"

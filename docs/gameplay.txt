@@ -1,0 +1,5 @@
+gameplay
+├─ A is the glyph of a ship
+├─ arrows and on-screen directional buttons move one cell per press
+├─ camera tracks the local ship using an offset
+└─ hit adjudication and defender-favoring rules remain unimplemented

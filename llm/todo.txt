@@ -1,10 +1,24 @@
 A
-├─ done: four independent TUI processes, PTYs, loopback coupling
-├─ done: Nim gateway models latency, jitter and loss
-├─ done: movement propagates; replicas converge; clean exit and crash cleanup
-├─ test entry: make multi_agentvm (Nim, Futhark, Clang; Python inspection dependencies)
+├─ done: four real TUI clients, delayed gateway, normal/crash cleanup
+├─ done: typed position/velocity pair; no intent or acceleration prediction
+├─ done: transport age + sender-row age + cached age; 0.25s motion horizon
+├─ done: configurable owner bonus, bounded time-based correction
+├─ verification
+│  ├─ 2/4/16-peer constant motion, delay/jitter/loss and abrupt stops
+│  └─ four-TUI moving/input regression and existing game/sync checks
 ├─ limitations
-│  ├─ test-only transport, JSON, trusted loopback peers; not an Internet protocol
-│  ├─ test build suppresses random drift; all clients manipulate the same ship
-│  └─ tmux multi remains a separate two-client local rendering launcher
-└─ next: protocol research and action-specific scheduling experiments
+│  ├─ finite owner influence still permits dilution and correlated echoes
+│  ├─ no restart epochs, schema negotiation or authenticated transport
+│  ├─ no damage adjudication; defender-favoring rules remain a design direction
+│  └─ loopback test uses shared-clock timestamps; no production clock estimator
+└─ next: quantify owner control during abrupt changes and sustained disagreement
+
+trust
+├─ proposed: llm/trust.md preserves the author's specification and formulae
+├─ accepted: per-desync severity without extra dt; time-based decay/recovery
+├─ accepted: ping/reliability knots (30/1, 80/.8, 150/.5, 400/.05)
+├─ accepted: witnessed/paragon/swarm credibility databases, .4/.4/.2 influence
+├─ accepted: share full witnessed DB on connect; spray subsequent witnessed records
+├─ clarify: packet-independent severity and effects of jitter/loss
+├─ todo: implement separate credibility/reliability and per-kind weights
+└─ todo: persist applicable TOML databases; keep swarm volatile and disseminate witnessed records

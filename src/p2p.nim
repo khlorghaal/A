@@ -1,12 +1,13 @@
 # peers cant desync if a cliebt is barely sank to its own sink
 # maintain evanescent stochastic dendrites
-import std/[tables, sets, random, sequtils]
+import std/[tables, sets, random, sequtils, math]
 
 type
   PeerId* = uint64
   Edge* = tuple[informant, subject: PeerId]
   PeerInfo* = object
     id*: PeerId
+    playerId*: string # exact identity supplied by authenticated transport
     endpoint*: string
 
   Traffic* = tuple[load, coefficient: float32]
@@ -20,12 +21,13 @@ type
   Datum* = object
     key*, revision*: uint64
     bytes*: seq[byte]
+    age*  : float64 # sample age at receipt, seconds; supplied by transport
   Receipt* = tuple[source: PeerId, datum: Datum]
 
   KindId* = uint16
   Kind* = ref object
     id*: KindId
-    dropOld*, once*: bool
+    dropOld*, once*, initialFull*: bool
     row*: seq[Datum] # outgoing state
     queue*: seq[Receipt] # incoming effects
 
@@ -43,6 +45,8 @@ type
     near*, far*, all*: seq[Peer] # disjoint near/far; all is their union
     kinds*: Table[KindId, Kind]
     pingLimit*: int64
+    positionTrust*: proc(p: Peer): float32
+    recordDesync*: proc(p: Peer, severity: float32)
     rng: Rand
 
 var # transport; bind before use, no reentry
@@ -66,9 +70,9 @@ proc initNet*(selph: PeerInfo, seed: int64): Net =
   Net(selph: selph, rng: initRand(seed), pingLimit: 2000)
 
 proc register*(n: var Net, id: KindId,
-               dropOld = false, once = false): Kind =
+               dropOld = false, once = false, initialFull = false): Kind =
   doAssert id notin n.kinds
-  result = Kind(id: id, dropOld: dropOld, once: once)
+  result = Kind(id: id, dropOld: dropOld, once: once, initialFull: initialFull)
   n.kinds[id] = result
 
 func sq[T](x: T): T = x*x
@@ -127,6 +131,9 @@ proc join(n: var Net, info: PeerInfo) =
   for q in n.peers.values:
     if q != p: peers.add q.info
   sendPeers(p, peers)
+  for k in n.kinds.values:
+    if k.initialFull:
+      for d in k.row: sendDatum(p, k, d)
 
 proc receive(n: var Net) =
   for e in gather():
@@ -147,9 +154,14 @@ proc receive(n: var Net) =
         k.queue.add (id, e.datum)
 
 proc reportDesync*(n: var Net, id: PeerId, severity: float32) =
-  doAssert severity >= 0 and not desyncCost.isNil
+  # todo: severity rule for packet-independent discrepancies such as ammo
+  doAssert severity >= 0 and classify(severity) notin {fcNan, fcInf, fcNegInf}
   if id notin n.peers: return
-  n.peers[id].trust -= max(0'f32, desyncCost(severity))
+  if not n.recordDesync.isNil:
+    n.recordDesync(n.peers[id], severity)
+  else:
+    doAssert not desyncCost.isNil
+    n.peers[id].trust -= max(0'f32, desyncCost(severity))
   # engine judges causality and attribution
 
 iterator informantEdges*(n: Net): Edge =
@@ -157,7 +169,12 @@ iterator informantEdges*(n: Net): Edge =
     for source in p.informants:
       yield (source, p.info.id)
 
-proc tick*(n: var Net) =
+proc tick*(n: var Net, dt = 0.0) =
+  # Age existing outgoing rows; pass zero when they were just published.
+  doAssert dt >= 0 and classify(dt) notin {fcNan, fcInf, fcNegInf}
+  for k in n.kinds.values:
+    for d in k.row.mitems: d.age += dt
+
   n.receive()
   for p in n.all: traffic(p)
 
