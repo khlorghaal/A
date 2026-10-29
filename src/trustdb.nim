@@ -1,6 +1,6 @@
 ## Persistent credibility values; swarm reports remain in memory.
-import std/[json, math, os, sets, tables, unicode]
-import trust, tomlrows
+import std/[json, math, os, sets, tables]
+import trust, tomlrows, identity
 
 type
   TrustDb* = object
@@ -10,24 +10,24 @@ type
 
 func validValue(x: float32): bool =
   classify(x) notin {fcNan, fcInf, fcNegInf} and x >= 0 and x <= 1
-func validId(id: string): bool = id.len > 0 and validateUtf8(id) == -1
 
 proc check(id: string, value: float32) =
-  if not validId(id) or not validValue(value):
+  discard playerId(id)
+  if not validValue(value):
     raise newException(ValueError, "invalid player ID or credibility")
 
 proc setWitness*(db: var TrustDb, id: string, value: float32) =
   check(id, value)
-  db.witnessed[id] = value
+  db.witnessed[playerId(id)] = value
 proc setParagon*(db: var TrustDb, id: string, value: float32) =
   check(id, value)
-  db.paragon[id] = value
+  db.paragon[playerId(id)] = value
 proc setSwarm*(db: var TrustDb, reporter, subject: string, value: float32) =
   check(reporter, value)
   check(subject, value)
-  db.swarm[(reporter, subject)] = value
-func credibility*(db: TrustDb, subject: string): float32 =
-  db.scores.getOrDefault(subject)
+  db.swarm[(playerId(reporter), playerId(subject))] = value
+proc credibility*(db: TrustDb, subject: string): float32 =
+  db.scores.getOrDefault(playerId(subject))
 
 proc refresh*(db: var TrustDb) =
   ## One simultaneous step uses the previous combined scores for reporters.
@@ -53,6 +53,7 @@ proc refresh*(db: var TrustDb) =
 proc desync*(db: var TrustDb, id: string, severity: float32) =
   ## Severity is per discrepancy; packet-independent values need their own rule.
   check(id, severity)
+  let id = playerId(id)
   var c = Credibility(value: db.witnessed.getOrDefault(id),
                       discredit: db.discredit.getOrDefault(id))
   c.desync(severity)
@@ -80,7 +81,10 @@ proc readDb(path: string): Table[string, float32] =
       raise newException(ValueError, "invalid credibility")
     let value = node.getFloat().float32
     check(id, value)
-    result[id] = value
+    let normalized = playerId(id)
+    if normalized in result:
+      raise newException(ValueError, "duplicate normalized player ID in " & path)
+    result[normalized] = value
 
 proc writeDb(path: string, values: Table[string, float32]) =
   var sections: Sections

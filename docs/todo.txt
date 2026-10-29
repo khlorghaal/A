@@ -26,7 +26,7 @@ dbs
 
 
 weight each paragon or swarm report by its reporter's combined credibility
-compare player IDs by normalized Unicode sequence
+gateway and authenticated peer IDs: enforce NFC identity comparison
 
 
 credibility and reliability

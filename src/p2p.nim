@@ -7,7 +7,7 @@ type
   Edge* = tuple[informant, subject: PeerId]
   PeerInfo* = object
     id*: PeerId
-    playerId*: string # exact identity supplied by authenticated transport
+    playerId*: string # NFC identity supplied by authenticated transport
     endpoint*: string
 
   Traffic* = tuple[load, coefficient: float32]

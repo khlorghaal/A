@@ -1,6 +1,6 @@
 ## Witness-only exchange over the P2P datakind interface.
 import std/[algorithm, json, math, tables]
-import p2p, trust, trustdb
+import p2p, trust, trustdb, identity
 
 type
   TrustSync* = object
@@ -56,7 +56,7 @@ proc receive*(s: var TrustSync, n: Net) =
       let number = obj["credibility"].getFloat()
       if classify(number) in {fcNan, fcInf, fcNegInf} or number < 0 or number > 1: continue
       if keyOf(subject) != d.key: continue
-      let index = (receipt.source, subject)
+      let index = (receipt.source, playerId(subject))
       if index in s.seen and d.revision <= s.seen[index]: continue
       s.db[].setSwarm(p.info.playerId, subject, float32(number))
       s.seen[index] = d.revision
@@ -72,7 +72,8 @@ proc attachPositionPolicy*(s: TrustSync, n: var Net, unknownReliability = 0'f32)
   let db = s.db
   n.positionTrust = proc(p: Peer): float32 =
     let r = if p.ping < 0: unknownReliability else: reliability(float32(p.ping))
-    positionTrust(db[].credibility(p.info.playerId), r)
+    let cred = if p.info.playerId.len == 0: 0'f32 else: db[].credibility(p.info.playerId)
+    positionTrust(cred, r)
   n.recordDesync = proc(p: Peer, severity: float32) =
     if p.info.playerId.len > 0: db[].desync(p.info.playerId, clamp(severity, 0'f32, 1'f32))
 
