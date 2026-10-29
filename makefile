@@ -15,6 +15,11 @@ build/A:
 	mkdir -p build
 	nim c $(NIMFLAGS) -o:$@ src/a.nim
 
+# Interactive true-color sample; press a key to exit.
+build/colors: tests/colors.nim $(game_sources)
+	mkdir -p build
+	nim c $(NIMFLAGS) -o:$@ tests/colors.nim
+
 # Interactive, two-pane rendering launcher; independent of automated tests.
 multi: build/A
 	@if [ -n "$$TMUX" ]; then \
