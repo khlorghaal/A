@@ -35,7 +35,6 @@ credibility and reliability
 quantify owner control
   during abrupt changes and sustained disagreement
   data from an entity's owner gets +.3 cred
-  weapon hits are not owned in that sense, document
 
 
 defer>>>
