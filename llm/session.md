@@ -11,8 +11,9 @@ Current session
 │  ├─ doot integer hashes return uint32
 │  ├─ Nim hmap preserves unbounded Monte Carlo expansion and padding
 │  └─ trust-store IDs use NFC; duplicate normalized file entries fail loading
-├─ last verification, before cleanup: make test, make check, make multi_agentvm passed
-│  └─ cleanup pass: source/diff review only; user requested no tests
+├─ verification: make test, make check, make multi_agentvm passed after the
+│  source and test visual-annealing passes
+│  └─ four-client movement still settles short of eight owner inputs
 └─ open work (details remain in docs/todo.txt)
    ├─ gateway, authenticated peer mapping, isolated databases and trust/game integration
    ├─ NFC enforcement in future gateway and authenticated peer identities
