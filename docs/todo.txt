@@ -1,58 +1,79 @@
-Current scope: implement auth and gateway as the same server.
+makefile is mid. comment it and clean.
 
-need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
+doots hash and hmap .hpp
+  into nim
+  git rm hash.h hmap.hpp
 
-gateway is a seperate binary with no gameplay. authoritates peer identities and session tokens.
-only paragons contact the gateway after signin
+gateway
+  implement auth and gateway as the same server.
+  need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
+  gateway authoritates peer identities and session tokens.
+  only paragons contact the gateway after signin
 
-players register with gateway via gpg keys
-
-auth todo:
 -= users do not ssh to gateway, the client handles
-+= gateway exclusively uses ssl
-+= client connects to gateway with username. if gw does not know user, indicates so to client, client asks user for gpg pubkey which it gives to gw to store and enter with username. client may then login to gw by decrypting their session token with their privkey.
+gateway exclusively uses ssl
+client connects to gateway with username. if gw does not know user, indicates so to client, client asks user for gpg pubkey which it gives to gw to store and enter with username. client may then login to gw by decrypting their session token with their privkey.
 ses tok is used for dpop without contacting gw, im unsure how that works, document it well
 
+dbs
+	peers each keep db/[ trust_witnesssd trust_paragon friends ]
+	peers paragon list is locally volatile, gateway sends it each time. friends are simply appended to paragons.
+
+	witnessed is the credibility local peers calculate directly
+
+	gateway has db/[ users trust_swarm trust_paragons paragons ], where trust_paragons is trust data from paragons' witness
+
+	docs: nothing saves trust_swarm, it is volatile.
+
+	test dbs
+		each test client has its own dbs under $tmpdir/A/testclientN
+		test gateway db is peristent under build/gateway/db
+		build/client likewise contains build artefacts and its single db
+		build/client is used for debug/run, its db is not used for automated tests
+		makefile passes client an arg to indicate what db dir to use, obviously with default vals above
+
+
+weight each paragon or swarm report by its reporter's combined credibility
+compare player IDs by normalized Unicode sequence
+
+
+credibility and reliability
+	persistence, and witness propagation
+	
+implement hit adjudication and defender-favoring rules
+  khlor: wait wtf is adjudication, move to defered todo and elaborate what this means
+
+quantify owner control
+  during abrupt changes and sustained disagreement
+  data from an entity's owner gets +.3 cred
+  weapon hits are not owned in that sense, document
+
+
+Deferred>>>
+
+
+define packet-independent severity and reliability effects of jitter and loss
+
+revisit username registration policy; first registration may claim an unused name for now
+
 a standard ssl for login and session tokens
-gateway: a modern salted passkey store
-use linux system libs
-gateway is sshed into for account creation
-passwords via gpg
+gateway
+	players register with gateway via gpg keys
+	use linux system libs
+	gateway is sshed into for account creation
+	passwords via gpg
+	check if docs contain dpop for peers
+	  dpop does not need recontacting gw
+    a modern salted passkey store, if thats necessary
+    gw may send paragons excommunication orders to set gw/db/paragon_trust and a packet to all paragons locking trust_witnessed on that player to 0 with a bool locking it
+	  this is much funnier than banning
 
-each test client has its own dbs under $tmpdir/A/testclientN
-test gateway db is peristent under build/gateway/db
-build/client likewise contains build artefacts and its single db
-build/client is used for debug/run, its db is not used for automated tests
-makefile passes client an arg to indicate what db dir to use, obviously with default vals above
+reimplement friend trust
 
-peers each keep db/[ trust_witnesssd trust_paragon friends ]
-peers paragon list is locally volatile, gateway sends it each time. friends are simply appended to paragons.
-witnessed is the credibility local peers calculate directly
+decentral auth and gateways, fully trusted replication for load and geography
 
-gateway has db/[ users trust_swarm trust_paragons paragons ], where trust_paragons is trust data from paragons' witness
+docs: excom can be abnegated by manual edit of gw db
 
-nothing saves trust_swarm, it is volatile.
-
-Agent note
-├─ weight each paragon or swarm report by its reporter's combined credibility
-└─ compare player IDs by exact Unicode sequence, without normalization
-
-todo
-├─ implement credibility and reliability, persistence, and witness dissemination
-├─ define packet-independent severity and reliability effects of jitter and loss
-├─ implement hit adjudication and defender-favoring rules
-└─ quantify owner control during abrupt changes and sustained disagreement
-
-Deferred
-└─ revisit username registration policy; first registration may claim an unused name for now
-
-Deferred — author's text
-
-gw may send paragons excommunication orders to set gw/db/paragon_trust and a packet to all paragons locking trust_witnessed on that player to 0 with a bool locking it. that is much funnier than banning
-
-Deferred
-├─ friend trust; exclude from the current implementation
-├─ decentral auth and gateways, fully trusted replication for load and geography
-└─ excommunication override, preserving underlying witnessed credibility
-
-defer firewall for later
+firewalls
+  gw
+  peers against unauthed peers

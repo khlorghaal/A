@@ -1,3 +1,5 @@
+khlor: clean amd organize llm dir
+
 A
 ├─ done: four real TUI clients, delayed gateway, normal/crash cleanup
 ├─ done: typed position/velocity pair; no intent or acceleration prediction
