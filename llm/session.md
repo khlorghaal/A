@@ -11,6 +11,5 @@ Current session
 ├─ tests: Nim four-PTY harness; terminal image capture separate in llm/terminal
 └─ open: owner echoes dilute eight inputs to ~5.34/4.32 cells; trust/game integration
 ├─ hash_t is uint32; integer hash port committed and verified
-├─ Nim map port remains a draft; preserve unbounded Monte Carlo allocation
-│  └─ no growth cap or collision cutoff; expansion padding is part of the design
+├─ Nim map port uses unbounded Monte Carlo allocation and expansion padding
 └─ next active work: map port, gateway, databases, Unicode identity, owner control

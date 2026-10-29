@@ -1,6 +1,3 @@
-doots hmap .hpp
-  into nim; preserve unbounded Monte Carlo expansion and padding
-
 gateway
   auth and gateway as the same server.
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker

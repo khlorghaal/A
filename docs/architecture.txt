@@ -41,7 +41,7 @@ synchronization details
 Doot hash
 └─ src/doot_hash.nim preserves the integer hash formulas with uint32 results
 
-Doot map design
-├─ fixed-depth buckets; padding reserves room during expansion
-└─ unbounded Monte Carlo allocation; keep growing until the padding fits
-   └─ preserve this policy in the pending Nim port; no growth cap or collision cutoff
+Doot map
+├─ src/hmap.nim uses fixed-depth buckets with packed deletion
+├─ padding reserves room during expansion
+└─ Monte Carlo allocation grows until padding fits, with no imposed growth cap
