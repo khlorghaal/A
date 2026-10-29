@@ -22,10 +22,11 @@ block gatewayTiming:
 
 let id: Uid = (17'u64, 23'u64)
 var gateway = initGateway(80, 35, 0.25, 123)
-var nets: array[4, Net]
-var states: array[4, Sync]
-var entities: array[4, seq[Entity]]
-var active: PeerId
+var
+  nets    : array[4, Net]
+  states  : array[4, Sync]
+  entities: array[4, seq[Entity]]
+  active  : PeerId
 
 for i in 0..<4:
   let self = PeerId(i + 1)
@@ -46,7 +47,8 @@ traffic = proc(p: Peer) = discard
 accept = proc(p: Peer, k: Kind, d: Datum): bool = true
 sendPeers = proc(p: Peer, peers: seq[PeerInfo]) = discard
 sendDatum = proc(p: Peer, k: Kind, d: Datum) =
-  gateway.send(p.info.id, Event(event: data, source: PeerInfo(id: active), kind: k.id, datum: d))
+  gateway.send(p.info.id, Event(event: data, source: PeerInfo(id: active),
+                               kind: k.id, datum: d))
 
 # The owner stays at its target; all peers repeatedly exchange reports.
 for tick in 0..<500:
@@ -92,7 +94,8 @@ proc kineticRun(count: int, compensate: bool): float32 =
     if not compensate:
       for e in result.mitems: e.datum.age = 0
   sendDatum = proc(p: Peer, k: Kind, d: Datum) =
-    g.send(p.info.id, Event(event: data, source: PeerInfo(id: active), kind: k.id, datum: d))
+    g.send(p.info.id, Event(event: data, source: PeerInfo(id: active),
+                            kind: k.id, datum: d))
 
   for tick in 0..<320:
     g.advance(25)
