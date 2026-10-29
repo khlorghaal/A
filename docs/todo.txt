@@ -1,13 +1,7 @@
 gateway
-  auth and gateway as the same server.
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
-  gateway authoritates peer identities and session tokens.
   only paragons contact the gateway after signin
-
--= users do not ssh to gateway, the client handles
-gateway exclusively uses ssl
-client connects to gateway with username. if gw does not know user, indicates so to client, client asks user for gpg pubkey which it gives to gw to store and enter with username. client may then login to gw by decrypting their session token with their privkey.
-ses tok is used for dpop without contacting gw, im unsure how that works, document it well
+  gateway exclusively uses ssl
 
 dbs
 	peers each keep db/[ trust_witnesssd trust_paragon friends ]
@@ -26,7 +20,6 @@ dbs
 
 
 weight each paragon or swarm report by its reporter's combined credibility
-gateway and authenticated peer IDs: enforce NFC identity comparison
 
 
 credibility and reliability
@@ -38,6 +31,14 @@ owner control
 
 
 defer>>>
+
+auth
+  auth and gateway as the same server
+  gateway authoritates peer identities and session tokens
+  gateway and authenticated peer IDs: enforce NFC identity comparison
+-= users do not ssh to gateway, the client handles
+client connects to gateway with username. if gw does not know user, indicates so to client, client asks user for gpg pubkey which it gives to gw to store and enter with username. client may then login to gw by decrypting their session token with their privkey.
+ses tok is used for dpop without contacting gw, im unsure how that works, document it well
 
 hit adjudication and defender-favoring rules
   Decide whether a reported weapon hit counts and how much damage it causes when
