@@ -1,7 +1,7 @@
 # Build flags apply to every compiled target.
 NIMFLAGS ?=
 
-.PHONY: run multi multi_agentvm check test clean
+.PHONY: run multi multi_agentvm owner_measurements check test clean
 
 run: build/A
 	./build/A
@@ -55,6 +55,11 @@ clean:
 multi_agentvm: build/A-multi build/gateway
 	nim c $(NIMFLAGS) -o:build/multi-checks -r tests/multi_checks.nim
 	nim c $(NIMFLAGS) -o:build/multi-terminal -r tests/multi_terminal.nim
+
+# Deterministic measurements; values are reported rather than locked as targets.
+owner_measurements:
+	mkdir -p build
+	nim c $(NIMFLAGS) -o:build/owner-measurements -r tests/owner_measurements.nim
 
 build/A-multi: tests/socket_gateway.nim tests/sim_socket.nim
 	mkdir -p build
