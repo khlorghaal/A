@@ -1,3 +1,6 @@
+note how i formatted makefile with column alignment, i mentioned before without demonstrating
+use images to compare the diff
+
 gateway
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
   only paragons contact the gateway after signin
