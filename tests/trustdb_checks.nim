@@ -71,6 +71,21 @@ doAssert abs(load(dir).witnessed[composed] - 0.3) < 0.00001
 writeFile(dir / "trust_witnessed.toml", "[trust]\nalice = 0.5 # standard TOML comment\n")
 doAssert abs(load(dir).witnessed["alice"] - 0.5) < 0.00001
 
+var persisted: TrustDb
+persisted.setWitness("subject", 0.8)
+persisted.desync("subject", 0.6)
+persisted.save(dir)
+var restarted = load(dir)
+persisted.advance(1)
+restarted.advance(1)
+doAssert abs(persisted.witnessed["subject"] - restarted.witnessed["subject"]) < 0.000001
+persisted.witnessed.del("subject")
+try:
+  persisted.save(dir)
+  doAssert false
+except ValueError: discard
+doAssert "subject" in load(dir).witnessed
+
 db.refresh()
 db.refresh()
 doAssert abs(db.credibility(composed) - 0.6) < 0.00001

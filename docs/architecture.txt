@@ -27,7 +27,8 @@ current code
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
 
 Trust persistence
-└─ toml_serialization reads through a file input stream and writes TOML 1.0; IDs are normalized and validated
+├─ toml_serialization reads through a file input stream and writes TOML 1.0; IDs are normalized and validated
+└─ trust_witnessed.toml persists both witnessed credibility and discredit; legacy trust-only files remain readable
 
 synchronization details
 ├─ each kinetic record pairs position and velocity; no acceleration or intent prediction

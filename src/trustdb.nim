@@ -72,36 +72,44 @@ proc advance*(db: var TrustDb, dt: float32) =
     else: db.discredit.del(id)
   db.refresh()
 
-proc readDb(path: string): Table[string, float32] =
+proc readDb(path: string, witnessed = false): tuple[trust, discredit: Table[string, float32]] =
   if not fileExists(path): return
   var root: TomlValueRef
   try: root = Toml_v100.loadFile(path, TomlValueRef)
   except TomlError as e: raise newException(ValueError, "invalid trust TOML: " & e.msg)
-  if root.kind != TomlKind.Table or root.tableVal.len != 1 or
-     "trust" notin root.tableVal:
+  if root.kind != TomlKind.Table or "trust" notin root.tableVal:
     raise newException(ValueError, "invalid trust TOML: " & path)
-  let trust = root.tableVal["trust"]
-  if trust.kind notin {TomlKind.Table, TomlKind.InlineTable}:
-    raise newException(ValueError, "invalid trust TOML: " & path)
-  for id, node in trust.tableVal:
-    let value = case node.kind
-      of TomlKind.Float: float32(node.floatVal)
-      of TomlKind.Int:   float32(node.intVal)
-      else: raise newException(ValueError, "invalid credibility")
-    let normalized = checkedId(id, value)
-    if normalized in result:
-      raise newException(ValueError, "duplicate normalized player ID in " & path)
-    result[normalized] = value
+  for name, section in root.tableVal:
+    if name != "trust" and not (witnessed and name == "discredit"):
+      raise newException(ValueError, "invalid trust TOML: " & path)
+    if section.kind notin {TomlKind.Table, TomlKind.InlineTable}:
+      raise newException(ValueError, "invalid trust TOML: " & path)
+    var values: Table[string, float32]
+    for id, node in section.tableVal:
+      let value = case node.kind
+        of TomlKind.Float: float32(node.floatVal)
+        of TomlKind.Int:   float32(node.intVal)
+        else: raise newException(ValueError, "invalid credibility")
+      let normalized = checkedId(id, value)
+      if normalized in values:
+        raise newException(ValueError, "duplicate normalized player ID in " & path)
+      values[normalized] = value
+    if name == "trust": result.trust      = move(values)
+    else:               result.discredit = move(values)
 
-proc writeDb(path: string, values: Table[string, float32]) =
-  let root = Toml_v100.decode("[trust]\n", TomlValueRef)
-  let trust = root.tableVal["trust"]
-  for id, value in values:
-    let normalized = checkedId(id, value)
-    if normalized in trust.tableVal:
-      raise newException(ValueError, "duplicate normalized player ID in " & path)
-    trust.tableVal[normalized] = TomlValueRef(kind: TomlKind.Float,
-                                             floatVal: value.float64)
+proc writeDb(path: string, values: Table[string, float32],
+             discredit = default(Table[string, float32]), witnessed = false) =
+  let root = Toml_v100.decode(if witnessed: "[trust]\n[discredit]\n" else: "[trust]\n",
+                             TomlValueRef)
+  for (name, data) in [("trust", values), ("discredit", discredit)]:
+    if name notin root.tableVal: continue
+    let section = root.tableVal[name]
+    for id, value in data:
+      let normalized = checkedId(id, value)
+      if normalized in section.tableVal:
+        raise newException(ValueError, "duplicate normalized player ID in " & path)
+      section.tableVal[normalized] = TomlValueRef(kind: TomlKind.Float,
+                                                 floatVal: value.float64)
   # The library emits non-TOML 1.0 escapes for ESC and apostrophe.
   let encoded = Toml_v100.encode(root)
   var data = ""
@@ -121,19 +129,29 @@ proc writeDb(path: string, values: Table[string, float32]) =
   moveFile(tmp, path)
 
 proc load*(directory: string): TrustDb =
-  result.witnessed = readDb(directory / "trust_witnessed.toml")
-  result.paragon   = readDb(directory / "trust_paragon.toml")
+  let witnessed = readDb(directory / "trust_witnessed.toml", witnessed = true)
+  result.witnessed = witnessed.trust
+  result.discredit = witnessed.discredit
+  for id in result.discredit.keys:
+    if id notin result.witnessed:
+      raise newException(ValueError, "discredit without witnessed credibility")
+  result.paragon   = readDb(directory / "trust_paragon.toml").trust
   result.refresh()
 
 proc save*(db: TrustDb, directory: string) =
   # Validate both tables before replacing either file.
-  for values in [db.witnessed, db.paragon]:
+  for values in [db.witnessed, db.paragon, db.discredit]:
     var ids: HashSet[string]
     for id, value in values:
       let normalized = checkedId(id, value)
       if normalized in ids:
         raise newException(ValueError, "duplicate normalized player ID")
       ids.incl normalized
+  var witnesses: HashSet[string]
+  for id in db.witnessed.keys: witnesses.incl playerId(id)
+  for id in db.discredit.keys:
+    if id notin witnesses:
+      raise newException(ValueError, "discredit without witnessed credibility")
   createDir(directory)
-  writeDb(directory / "trust_witnessed.toml", db.witnessed)
-  writeDb(directory / "trust_paragon.toml",   db.paragon)
+  writeDb(directory / "trust_witnessed.toml", db.witnessed, db.discredit, true)
+  writeDb(directory / "trust_paragon.toml", db.paragon)
