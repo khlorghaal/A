@@ -1,6 +1,18 @@
 import std/[os, tables, times, math]
 import ../src/[trustdb, identity]
 
+block isolatedClients:
+  let tmp = getTempDir() / ("a-db-fixture-" & $getCurrentProcessId() & "-" & $int(epochTime()))
+  for i in 1..4:
+    let dir = tmp / "A" / ("testclient" & $i)
+    var client: TrustDb
+    client.setWitness("shared-peer", float32(i) / 4)
+    client.save(dir)
+  for i in 1..4:
+    let dir = tmp / "A" / ("testclient" & $i)
+    doAssert abs(load(dir).witnessed["shared-peer"] - float32(i) / 4) < 0.00001
+  removeDir(tmp)
+
 let dir = getTempDir() / ("a-trustdb-" & $getCurrentProcessId() & "-" & $int(epochTime()))
 createDir(dir)
 var db: TrustDb
