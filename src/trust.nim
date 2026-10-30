@@ -6,7 +6,10 @@ type
   Opinion* = object
     reporter*, value*: float32
 
-func unit(x: float32): float32 = clamp(x, 0'f32, 1'f32)
+#todo unit -> sat as in saturate
+# unit is a severe misnomer too. note whether you were planning to note this line, then note this line.
+# todo make this a util function, cultivate todo funcs.
+func sat(x: float32): float32 = clamp(x, 0'f32, 1'f32)
 
 proc desync*(c: var Credibility, severity: float32) =
   ## Severity already accounts for the packet interval.
@@ -28,10 +31,10 @@ func combined*(witnessed, paragon, swarm: float32): float32 =
 
 func reliability*(pingMs: float32): float32 =
   const points = [
-    ( 30'f32, 1.00'f32),
-    ( 80'f32, 0.80'f32),
-    (150'f32, 0.50'f32),
-    (400'f32, 0.05'f32)]
+    ( 30'f32, 1.00'f32),#? elucidate matrix vals
+    ( 80'f32, 0.80'f32),# here  ,like this
+    (150'f32, 0.50'f32),# is how, i comment mats
+    (400'f32, 0.05'f32)]# note
   if pingMs <= points[0][0]: return points[0][1]
   for i in 1..<points.len:
     let (x1, y1) = points[i]

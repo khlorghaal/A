@@ -37,8 +37,8 @@ func find[K, V](m: HMap[K, V], key: K): int =
   if m.slots.len == 0: return -1
   let start = m.bucket(key)
   for i in start ..< start + BucketDepth:
-    if not m.slots[i].occupied: return -1
-    if m.slots[i].key == key: return i
+    if not m.slots[i].occupied:   return -1
+    if     m.slots[i].key == key: return i
   -1
 
 func contains*[K, V](m: HMap[K, V], key: K): bool = m.find(key) >= 0

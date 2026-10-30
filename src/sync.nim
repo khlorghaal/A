@@ -1,13 +1,19 @@
 import std/[tables, math]
 import p2p
 
+#fixme  this has lots of odd semantics regarding betas, consoder inlining
+# agents+= do not make trivial functions for semantics
+#todo agents += make heavy use of noting my code preferences. look at my smaller diffs for learning style cues, mem note them and note in agents
+
+#todo replace `value` with v for number like, x for scalar, i for ints, s symbol
+# document^
 type
   Uid*     = tuple[h, l: uint64]
   sync_f*  = distinct float32
   sync_v2* = tuple[x, y: float32]
   sync_k2* = object
-    p*, v*: sync_v2 # position, velocity per second
-  sync_b*  = object
+    p*, v*: sync_v2 # position, velocity
+  sync_b*  = object #? explain _b ctx
     state     : bool
     confidence: float32
 
@@ -36,13 +42,15 @@ proc set*(x: var sync_b, value: bool) =
   x.confidence = (if value: 1'f32 else: 0'f32)
 
 func value*(x: sync_b): bool = x.state
+#fixme this is retarded, report: why is this an accessor? is it being used by some polymorph??
 
-func sv*(x, y: float32): sync_v2 = (x, y)
+func  sv*(x, y: float32): sync_v2 = (x, y) #? report again why this trivial func
 func `+`*(a, b: sync_v2): sync_v2 = sv(a.x + b.x, a.y + b.y)
 proc `+=`*(a: var sync_v2, b: sync_v2) = a = a + b
 
 proc drift*(m: var sync_k2, dt: float64) =
   m.p += sv(m.v.x * float32(dt), m.v.y * float32(dt))
+#todo use lambdas for oneline equations
 
 proc initSync*(n: var Net, kind: KindId): Sync =
   Sync(kind: n.register(kind, dropOld = true),
@@ -79,6 +87,7 @@ proc getBool(bytes: seq[byte], at: var int): bool =
   value == 1
 
 proc encode[T](entity: T): seq[byte] =
+  #todo operator or macro for result.put => (res+=) or whatever. report on
   result.put(entity.id.h, 8)
   result.put(entity.id.l, 8)
   for _, field in fieldPairs(entity):
@@ -122,6 +131,7 @@ proc publish*[T](s: var Sync, entities: openArray[T]) =
     s.keys[key] = entity.id
     s.kind.row.add Datum(key: key, revision: s.serial, bytes: encode(entity))
 
+#todo i dont like the name "ingest" lol
 proc ingest[T](s: var Sync, entities: openArray[T]) =
   for receipt in s.kind.queue:
     let d = receipt.datum
@@ -143,6 +153,7 @@ proc ingest[T](s: var Sync, entities: openArray[T]) =
 
 func toward(a, b, alpha: float32): float32 =
   float32(float64(a)*(1 - float64(alpha)) + float64(b)*float64(alpha))
+  #? explain toward pls. is it the rubberband? if so name it that
 
 proc blend[T](entity: var T, target: T, alpha: float32) =
   for _, a, b in fieldPairs(entity, target):
@@ -173,6 +184,7 @@ iterator influences(s: Sync, n: Net, entity: Uid): Influence =
     let w = float64(s.weight(index.source, entity, trust))
     if w > 0: yield (report.bytes, w, age)
 
+#? overview. comment in body.
 proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
                    dt: float64, selfTrust = 0'f32) =
   doAssert dt >= 0 and finite(dt)
