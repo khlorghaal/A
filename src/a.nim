@@ -48,6 +48,7 @@ proc hrng(): int64 =
   var r =     s *% 0x5D747531573B1B'i64
   r= ashr(r,7) xor 0x73513D1B7117B3'i64
   randS = r
+  r
 
 proc genUid(): Uid =
   (cast[uint64](hrng()), cast[uint64](hrng()))

@@ -1,7 +1,5 @@
 need a maybe type for hmap and generally
 
-replace remaining trust `unit` calls with `sat`
-
 units like seconds miliseconds should be strongly typed and convert apprpropriately
 
 scrap the custom toml impl, just use toml
