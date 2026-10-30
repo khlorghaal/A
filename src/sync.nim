@@ -62,17 +62,17 @@ func weight*(s: Sync, source: PeerId, entity: Uid, trust: float32): float32 =
   let bonus = if owns: max(0'f32, s.ownerBonus) else: 0'f32
   max(0'f32, trust + bonus)
 
-proc put(bytes: var seq[byte], value: uint64, count: int) =
-  for i in 0..<count: bytes.add byte((value shr (i*8)) and 255)
+proc put(bytes: var seq[byte], i: uint64, count: int) =
+  for j in 0..<count: bytes.add byte((i shr (j*8)) and 255)
 
 proc get(bytes: seq[byte], at: var int, count: int): uint64 =
   if at + count > bytes.len: raise newException(ValueError, "short sync record")
   for i in 0..<count: result = result or (uint64(bytes[at + i]) shl (i*8))
   at += count
 
-proc `+=`(bytes: var seq[byte], value: uint64)  = bytes.put(value, 8)
-proc `+=`(bytes: var seq[byte], value: float32) = bytes.put(cast[uint32](value), 4)
-proc `+=`(bytes: var seq[byte], value: bool)    = bytes.put(uint64(ord(value)), 1)
+proc `+=`(bytes: var seq[byte], i: uint64)  = bytes.put(i, 8)
+proc `+=`(bytes: var seq[byte], x: float32) = bytes.put(cast[uint32](x), 4)
+proc `+=`(bytes: var seq[byte], b: bool)    = bytes.put(uint64(ord(b)), 1)
 
 proc getFloat(bytes: seq[byte], at: var int): float32 =
   result = cast[float32](uint32(bytes.get(at, 4)))
@@ -80,9 +80,9 @@ proc getFloat(bytes: seq[byte], at: var int): float32 =
     raise newException(ValueError, "nonfinite sync value")
 
 proc getBool(bytes: seq[byte], at: var int): bool =
-  let value = bytes.get(at, 1)
-  if value > 1: raise newException(ValueError, "invalid boolean")
-  value == 1
+  let i = bytes.get(at, 1)
+  if i > 1: raise newException(ValueError, "invalid boolean")
+  i == 1
 
 proc encode[T](entity: T): seq[byte] =
   result += entity.id.h
