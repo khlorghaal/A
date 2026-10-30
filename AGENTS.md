@@ -18,7 +18,11 @@ Use visual-review iterations in proportion to the remaining token budget; reserv
 
 Todo workflow: docs/todo.txt is authoritative; llm/todo.txt is only a pointer.
 Follow llm/agents/skills/todo/SKILL.md and llm/agents/skills/do/SKILL.md for local
-refinements to the cloud skills. A standalone defer>>> or Deferred>>> marker
+refinements to the cloud skills. Todo order expresses priority; tasks may be
+done in any order. Only actual dependencies and explicit sequencing constrain
+execution. A blocked item does not block unrelated work. For multi-part
+checklists, llm/agents/skills/ordered-checklist/SKILL.md applies the same rule.
+A standalone defer>>> or Deferred>>> marker
 (case-insensitive) defers every subsequent line, regardless of headings or
 indentation. Do not execute explicitly deferred entries above the marker either. Deferred
 means leave the task for later: do not implement, research, plan or otherwise

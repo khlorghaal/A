@@ -8,7 +8,8 @@ points here; no cloud skill sources are modified by this local synchronization.
 - `cman`: compressed responses, with manual and topic-based activation.
 - `paste`: a single copyable command unless further context is essential.
 - `report`: explain requested reports in the current chat.
-- `todo`: active/deferred queue semantics and removal of verified completed items.
+- `todo`: priority-based task selection, scoped blockers, deferred work and removal of verified completed items.
+- `ordered-checklist`: preserve listed priorities without inventing execution dependencies.
 - `visual-annealing`: repeated narrow and broad inspection of rendered code.
 - `pqt`: pause execution until the user explicitly authorizes resumption.
 - `tree-notes`: compact, durable hierarchical working notes.
