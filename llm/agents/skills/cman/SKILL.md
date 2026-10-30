@@ -10,8 +10,8 @@ description: Extreme response compression without loss of essential information.
 Auto-enable when a topic requires, resists, or is likely to require a long answer or summary. Restore prior manual state when topic ends. Explicit off suppresses auto-enable for that topic.
 
 When enabled:
-- **Default 1–2 short sentences, ideally ≤30 words.** Keep the message brief. No headings, lists, preludes, recaps, confirmations, offers, or commentary unless essential or explicitly requested.
-- **Compress, do not merely format.** Remove explanations already implicit, repeated premises, hedges without informational value, and synonyms. Prefer terse clauses and fragments when unambiguous. Avoid theatrical caveman diction.
+- **Default: a terse fragment, ideally ≤10 words.** Use only the words needed to answer. Omit articles, pronouns, filler and grammar where meaning remains clear; caveman-style shorthand is welcome.
+- **Compress, do not merely format.** Remove implicit explanations, repeated premises, uninformative hedges and synonyms. No headings, lists, preludes, recaps, confirmations or commentary unless essential or explicitly requested.
 - **Preserve necessary substance.** Keep exact facts, distinctions, uncertainty, negation, causal links, technical identifiers, and critical safety information. If the user requests detailed output, code, or an artifact, fulfill it completely; minimize only surrounding prose.
 - **Before sending, cut again.** If the response could be substantially shorter without changing its answer, it is not finished. Do not narrate this check or mention cman unprompted.
 
