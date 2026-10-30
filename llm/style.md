@@ -9,3 +9,9 @@ Notation is compact and often deliberately coined: short names, dense local expr
 Comments frequently use lowercase, fragments and contractions; they sit beside or just before the relevant operation. They record ownership, invariants, assumptions, risks and rationale, including candid uncertainty. Humor, irreverence and occasional profanity coexist with serious technical judgment. Do not imitate personality as ornament or regularize the author's voice. Distinguish exploratory notes from verified facts.
 
 My reading: the code seeks a small, personally coherent language for direct thought, with spatial form carrying relationships alongside semantics. Preserve its visible continuity when refining it. Do not mistake unusual spelling or a terse name for a defect by itself; investigate behavior and context. Avoid importing all of doot's C++ conventions wholesale into Nim.
+
+For a source-grounded account of DOOT's data model and caveats, see
+`llm/doot-architecture.md`. In particular, distinguish ownership from views,
+identity from movable storage, and pointer/sentinel/value representations of
+absence. Treat these as design context, not proof that every DOOT draft works
+or a mandate to transplant C++ memory rules into Nim.
