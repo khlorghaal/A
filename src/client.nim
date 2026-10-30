@@ -22,18 +22,18 @@ type
     g*      : Grapheme
     fg*, bg*: rgb
 
-func `+`*(a, b: i2): i2          = (a.x + b.x, a.y + b.y)
-func `-`*(a, b: i2): i2          = (a.x - b.x, a.y - b.y)
+func   `+`*(a, b: i2): i2          = (a.x + b.x, a.y + b.y)
+func   `-`*(a, b: i2): i2          = (a.x - b.x, a.y - b.y)
 func `div`*(a: i2, b: int32): i2 = (a.x div b, a.y div b)
 proc `+=`*(a: var i2, b: i2) = a = a + b
-func v*(x, y: int32): i2 = (x, y)
+func    v*(x, y: int32): i2 = (x, y)#? rept why?? whats * is significanted?
 
 func isBound*(v, a, b: i2): bool =
   v.x >= a.x and v.x < b.x and
   v.y >= a.y and v.y < b.y
 
 const
-  colBaseFg  = 0xfafafa'u32
+  colBaseFg  = 0xfafafa'u32 #only client uses rgb
   colBaseBg* = 0x020202'u32
   colDpadFg  = 0x111111'u32
   colDpadBg  = 0x444444'u32
@@ -53,7 +53,7 @@ proc initScreen*(): bool =
   discard tb_clear()
   true
 
-proc closeScreen*() = discard tb_shutdown()
+proc closeScreen*() = discard tb_shutdown() #todo inline
 
 proc screenSize*() =
   sdim = (int32(tb_width()), int32(tb_height()))
@@ -91,7 +91,7 @@ const pad* = [ # paired display / hit map; widths are terminal columns
   "    │↓↓↓│    ", "    ddddd    ",
   "    │↓↓↓│    ", "    ddddd    ",
   "    │↓↓↓│    ", "    ddddd    ",
-  "    └───┘    ", "    ddddd    "]
+  "    └───┘    ", "    ddddd    "]#todo defer make fancier
 
 proc drawPad*(mouse: i2, act: proc(a: Action)) =
   const wh: i2 = (int32(pad[0].runeLen), int32(pad.len div 2))

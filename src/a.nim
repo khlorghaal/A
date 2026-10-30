@@ -45,10 +45,9 @@ proc nowUs(): int64 = getMonoTime().ticks div 1000 - t0
 
 proc hrng(): int64 =
   let s = randS +% 17171
-  var r = s *% 0x5D747531573B1B'i64
-  r = ashr(r, 7) xor 0x73513D1B7117B3'i64
+  var r =     s *% 0x5D747531573B1B'i64
+  r= ashr(r,7) xor 0x73513D1B7117B3'i64
   randS = r
-  r
 
 proc genUid(): Uid =
   (cast[uint64](hrng()), cast[uint64](hrng()))
