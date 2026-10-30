@@ -51,7 +51,7 @@ proc measure(peers: int, latency, jitter: int64, loss: float64,
       if i == 1 and dissent and tick >= 20: bodies[i][0].pos.x = 0
       states[i].publish(bodies[i])
       nets[i].tick()
-      states[i].reconcile(nets[i], bodies[i], 0.025)
+      states[i].reconcile(nets[i], bodies[i], Seconds(0.025))
   result = newSeq[float32](peers)
   for i in 0..<peers:
     result[i] = bodies[i][0].pos.x

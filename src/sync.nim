@@ -39,8 +39,8 @@ proc set*(x: var sync_b, b: bool) =
 func `+`*(a, b: sync_v2): sync_v2 = (a.x + b.x, a.y + b.y)
 proc `+=`*(a: var sync_v2, b: sync_v2) = a = a + b
 
-proc drift*(m: var sync_k2, dt: float64) =
-  m.p += (m.v.x * float32(dt), m.v.y * float32(dt))
+proc drift*(m: var sync_k2, dt: Seconds) =
+  m.p += (m.v.x * float32(float64(dt)), m.v.y * float32(float64(dt)))
 #todo use lambdas for oneline equations
 
 proc initSync*(n: var Net, kind: KindId): Sync =
@@ -181,12 +181,12 @@ iterator influences(s: Sync, n: Net, entity: Uid): Influence =
     if finite(w) and w > 0: yield (report.bytes, w, age)
 
 proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
-                   dt: float64, selfTrust = 0'f32) =
-  doAssert dt >= 0 and finite(dt)
+                   dt: Seconds, selfTrust = 0'f32) =
+  doAssert dt >= Seconds(0) and finite(float64(dt))
   doAssert finite(float64(s.horizon)) and s.horizon >= Seconds(0)
   doAssert finite(s.ownerBonus) and finite(s.rate) and
            finite(float64(s.ttl)) and s.ttl > Seconds(0)
-  s.time += Seconds(dt)
+  s.time += dt
   s.ingest(entities)
 
   # Build a weighted target from fresh peer reports, then ease local state to it.
@@ -203,7 +203,7 @@ proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
         when field is sync_k2:
           if age > s.horizon: fresh = false
           else:
-            field.drift(float64(age))
+            field.drift(age)
             if not finite(field.p.x) or not finite(field.p.y): fresh = false
       if not fresh: continue
 
@@ -214,5 +214,5 @@ proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
       let own   = s.weight(n.selph.id, entity.id, selfTrust)
       let pull  = float64(max(0'f32, s.rate))*total /
                   (1 + float64(own) + total)
-      let alpha = float32(1 - exp(-pull*dt))
+      let alpha = float32(1 - exp(-pull*float64(dt)))
       entity.blend(target, alpha)

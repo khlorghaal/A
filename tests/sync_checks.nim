@@ -49,7 +49,7 @@ doAssert tx.kind.row[0].bytes == @[
 left.tick()
 right.tick()
 doAssert rx.kind.queue.len == 1
-rx.reconcile(right, b, 0.5)
+rx.reconcile(right, b, Seconds(0.5))
 let expectedAlpha = 1 - exp(-8 * 0.55 / 1.55 * 0.5)
 doAssert abs(float64(b[0].pos.x) - 10 * expectedAlpha) < 0.0001
 doAssert b[0].trigger.state
@@ -67,7 +67,7 @@ block ownerCredibility:
   var entities = @[Entity(id: id)]
   own.publish(entities)
   own.kind.queue.add (1'u64, tx.kind.row[0])
-  own.reconcile(policy, entities, 0.1)
+  own.reconcile(policy, entities, Seconds(0.1))
   doAssert bonuses.len == 1 and abs(bonuses[0] - 0.3) < 0.00001
 
   bonuses.setLen(0)
@@ -75,7 +75,7 @@ block ownerCredibility:
   other.owners[id] = 2
   other.publish(entities)
   other.kind.queue.add (1'u64, tx.kind.row[0])
-  other.reconcile(policy, entities, 0.1)
+  other.reconcile(policy, entities, Seconds(0.1))
   doAssert bonuses == @[0'f32]
 
   policy.positionTrust = proc(p: Peer, bonus: float32): float32 = Inf.float32
@@ -83,16 +83,16 @@ block ownerCredibility:
   var unchanged = @[Entity(id: id)]
   invalid.publish(unchanged)
   invalid.kind.queue.add (1'u64, tx.kind.row[0])
-  invalid.reconcile(policy, unchanged, 0.1)
+  invalid.reconcile(policy, unchanged, Seconds(0.1))
   doAssert unchanged[0].pos == (0'f32, 0'f32)
 
 block senderAge:
   var age = 0.0
   let send = sendDatum
   sendDatum = proc(p: Peer, k: Kind, d: Datum) = age = float64(d.age)
-  left.tick(0.075)
+  left.tick(Seconds(0.075))
   doAssert abs(age - 0.075) < 0.000001
-  left.tick(0.025)
+  left.tick(Seconds(0.025))
   doAssert abs(age - 0.1) < 0.000001
   sendDatum = send
 
@@ -105,7 +105,7 @@ proc trajectory(steps: int, owner: PeerId, trust: float32,
   var entities = @[Entity(id: id)]
   s.publish(entities)
   for i in 0..<duplicates: s.kind.queue.add (1'u64, tx.kind.row[0])
-  for i in 0..<steps: s.reconcile(n, entities, 1.0/float64(steps))
+  for i in 0..<steps: s.reconcile(n, entities, Seconds(1.0/float64(steps)))
   entities[0].pos.x
 
 let whole = trajectory(1, 1, 0.25)
@@ -116,23 +116,23 @@ doAssert abs(trajectory(1, 2, 0.25) - trajectory(100, 2, 0.25)) < 0.0001
 doAssert trajectory(1, 2, -1) == 0
 
 # Expiry, replay and malformed input cannot renew an old influence.
-rx.reconcile(right, b, 3)
+rx.reconcile(right, b, Seconds(3))
 let expired = b[0].pos
 rx.kind.queue.add (1'u64, tx.kind.row[0])
-rx.reconcile(right, b, 0.1)
+rx.reconcile(right, b, Seconds(0.1))
 doAssert b[0].pos == expired
 var broken = tx.kind.row[0]
 inc broken.revision
 broken.bytes.setLen(2)
 rx.kind.queue.add (1'u64, broken)
-rx.reconcile(right, b, 0.1)
+rx.reconcile(right, b, Seconds(0.1))
 doAssert b[0].pos == expired
 
 # A newer false state must overcome the boolean's hysteresis.
 a[0].trigger.set(false)
 tx.publish(a)
 rx.kind.queue.add (1'u64, tx.kind.row[0])
-rx.reconcile(right, b, 0.5)
+rx.reconcile(right, b, Seconds(0.5))
 doAssert not b[0].trigger.state
 
 echo "sync checks passed"
@@ -154,11 +154,11 @@ block kineticSamples:
   var bodies = @[Body(id: id, kin: sync_k2(p: (2,0), v: (10,0)), tag: 17)]
   rx.publish(bodies)
   rx.kind.queue.add (1'u64, sample)
-  rx.reconcile(n, bodies, 0.01)
+  rx.reconcile(n, bodies, Seconds(0.01))
   doAssert abs(bodies[0].kin.p.x - 2) < 0.0001 # transit age included
   for i in 0..<10:
-    bodies[0].kin.drift(0.05)
-    rx.reconcile(n, bodies, 0.05)
+    bodies[0].kin.drift(Seconds(0.05))
+    rx.reconcile(n, bodies, Seconds(0.05))
   doAssert abs(bodies[0].kin.p.x - 7) < 0.0001 # cached age also included
   doAssert bodies[0].tag == 17
 
@@ -168,7 +168,7 @@ block kineticSamples:
   sample = tx.kind.row[0]
   sample.age = Seconds(0.15)
   rx.kind.queue.add (1'u64, sample)
-  rx.reconcile(n, bodies, 0.25)
+  rx.reconcile(n, bodies, Seconds(0.25))
   doAssert bodies[0].kin.v.x < 10
 
   # Motion reports beyond the horizon are discarded, not frozen as targets.
@@ -180,14 +180,14 @@ block kineticSamples:
   sample = tx.kind.row[0]
   sample.age = Seconds(0.25)
   capped.kind.queue.add (1'u64, sample)
-  capped.reconcile(n, bodies, 0.1)
+  capped.reconcile(n, bodies, Seconds(0.1))
   doAssert abs(bodies[0].kin.p.x - 2.5) < 0.0001
 
   let projected = bodies[0].kin
   sample.age = Seconds(1)
   inc sample.revision
   capped.kind.queue.add (1'u64, sample)
-  capped.reconcile(n, bodies, 0.1)
+  capped.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == projected
 
   # Malformed ages cannot poison state or advance the revision watermark.
@@ -196,7 +196,7 @@ block kineticSamples:
     sample.age = Seconds(age)
     inc sample.revision
     capped.kind.queue.add (1'u64, sample)
-    capped.reconcile(n, bodies, 0)
+    capped.reconcile(n, bodies, Seconds(0))
     doAssert bodies[0].kin == old
 
   # Finite coordinates may still overflow during projection.
@@ -205,14 +205,14 @@ block kineticSamples:
   sample.revision = 100
   sample.age = Seconds(0.25)
   capped.kind.queue.add (1'u64, sample)
-  capped.reconcile(n, bodies, 0.1)
+  capped.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == old
 
   var expired = initSync(n, 11)
   expired.publish(bodies)
   sample.age = expired.ttl
   expired.kind.queue.add (1'u64, sample)
-  expired.reconcile(n, bodies, 0.1)
+  expired.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == old
 
   echo "kinetic sample checks passed"

@@ -85,7 +85,7 @@ proc act(a: Action) =
   of actD: ships[0].kin.p += ( 0'f32, 1'f32)
   of actF: ships[0].trigger.set(not ships[0].trigger.state)
 
-proc stepShips(dt = 0.025) =
+proc stepShips(dt = Seconds(0.025)) =
   for i in 0..<shipsEnd:
     when not defined(simSockets):
       case hrng() mod 5
@@ -129,7 +129,7 @@ proc main(): int =
 
   while true:
     let started = nowUs()
-    let dt = float64(started - previous)/float64(sec)
+    let dt = Seconds(float64(started - previous)/float64(sec))
     previous = started
 
     if not gather.isNil: net.tick(dt)

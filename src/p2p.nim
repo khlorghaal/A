@@ -171,11 +171,11 @@ iterator informantEdges*(n: Net): Edge =
     for source in p.informants:
       yield (source, p.info.id)
 
-proc tick*(n: var Net, dt = 0.0) =
+proc tick*(n: var Net, dt = Seconds(0)) =
   # Age existing outgoing rows; pass zero when they were just published.
-  doAssert dt >= 0 and classify(dt) notin {fcNan, fcInf, fcNegInf}
+  doAssert dt >= Seconds(0) and classify(float64(dt)) notin {fcNan, fcInf, fcNegInf}
   for k in n.kinds.values:
-    for d in k.row.mitems: d.age += Seconds(dt)
+    for d in k.row.mitems: d.age += dt
 
   n.receive()
   for p in n.all: traffic(p)

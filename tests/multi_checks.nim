@@ -58,7 +58,7 @@ for tick in 0..<500:
     if i == 0: entities[i][0].pos = (10, 0)
     states[i].publish(entities[i])
     nets[i].tick()
-    if i != 0: states[i].reconcile(nets[i], entities[i], 0.025)
+    if i != 0: states[i].reconcile(nets[i], entities[i], Seconds(0.025))
 
 doAssert gateway.sent > 0 and gateway.dropped > 0
 for i in 1..<4:
@@ -102,10 +102,10 @@ proc kineticRun(count: int, compensate: bool): float32 =
     for i in 0..<count:
       active = PeerId(i+1)
       if i == 0 and tick == 160: bodies[i][0].kin.v = (0,0)
-      bodies[i][0].kin.drift(0.025)
+      bodies[i][0].kin.drift(Seconds(0.025))
       syncs[i].publish(bodies[i])
       nets[i].tick()
-      if i != 0: syncs[i].reconcile(nets[i], bodies[i], 0.025)
+      if i != 0: syncs[i].reconcile(nets[i], bodies[i], Seconds(0.025))
     if tick == 159:
       for i in 1..<count:
         result = max(result, abs(bodies[i][0].kin.p.x - bodies[0][0].kin.p.x))
