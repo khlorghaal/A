@@ -38,7 +38,6 @@ credibility and reliability
 	persistence, and witness propagation
 	
 owner control
-  extend abrupt-change and sustained-disagreement measurements across peer and latency matrices
   data from an entity's owner gets +.3 cred
 
 

@@ -9,19 +9,19 @@ type Body = object
 
 const id: Uid = (71'u64, 19'u64)
 
-proc measure(latency, jitter: int64, loss: float64,
-             holdOwner, dissent: bool): array[4, float32] =
+proc measure(peers: int, latency, jitter: int64, loss: float64,
+             holdOwner, dissent: bool): seq[float32] =
   var gateway = initGateway(latency, jitter, loss, 123)
   var
-    nets  : array[4, Net]
-    states: array[4, Sync]
-    bodies: array[4, seq[Body]]
+    nets   = newSeq[Net](peers)
+    states = newSeq[Sync](peers)
+    bodies = newSeq[seq[Body]](peers)
     active: PeerId
 
-  for i in 0..<4:
+  for i in 0..<peers:
     let self = PeerId(i+1)
     nets[i] = initNet(PeerInfo(id: self), int64(self))
-    for j in 0..<4:
+    for j in 0..<peers:
       if i == j: continue
       let p = Peer(info: PeerInfo(id: PeerId(j+1)), trust: 0.5,
                    up: (0'f32, 1'f32))
@@ -43,7 +43,7 @@ proc measure(latency, jitter: int64, loss: float64,
 
   for tick in 0..<400:
     gateway.advance(25)
-    for i in 0..<4:
+    for i in 0..<peers:
       active = PeerId(i+1)
       # A one-time jump, a held owner target, or a held dissenting report.
       if i == 0 and (tick == 20 or (holdOwner and tick >= 20)):
@@ -52,17 +52,19 @@ proc measure(latency, jitter: int64, loss: float64,
       states[i].publish(bodies[i])
       nets[i].tick()
       states[i].reconcile(nets[i], bodies[i], 0.025)
-  for i in 0..<4:
+  result = newSeq[float32](peers)
+  for i in 0..<peers:
     result[i] = bodies[i][0].pos.x
     doAssert classify(result[i]) notin {fcNan, fcInf, fcNegInf}
 
-for latency in [0'i64, 80'i64]:
-  let jitter = if latency == 0: 0'i64 else: 35'i64
-  let loss = if latency == 0: 0.0 else: 0.25
-  let impulse = measure(latency, jitter, loss, false, false)
-  let held    = measure(latency, jitter, loss, true,  false)
-  let dissent = measure(latency, jitter, loss, true,  true)
-  doAssert impulse[0] > 0
-  doAssert abs(held[0] - 8) < 0.01
-  echo "latency=", latency, " impulse=", impulse, " held=", held,
-       " dissent=", dissent
+for peers in [2, 4, 8, 16]:
+  for latency in [0'i64, 40'i64, 80'i64, 160'i64]:
+    let jitter = latency div 2
+    let loss = if latency == 0: 0.0 else: 0.25
+    let impulse = measure(peers, latency, jitter, loss, false, false)
+    let held    = measure(peers, latency, jitter, loss, true,  false)
+    let dissent = measure(peers, latency, jitter, loss, true,  true)
+    doAssert impulse[0] > 0
+    doAssert abs(held[0] - 8) < 0.01
+    echo "peers=", peers, " latency=", latency, " impulse=", impulse,
+         " held=", held, " dissent=", dissent
