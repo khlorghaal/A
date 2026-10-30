@@ -1,7 +1,7 @@
 # peers cant desync if a cliebt is barely sank to its own sink
 # maintain evanescent stochastic dendrites
 import std/[tables, sets, random, sequtils, math]
-import units
+import units, saturation
 export units
 
 type
@@ -79,7 +79,6 @@ proc register*(n: var Net, id: KindId,
   n.kinds[id] = result
 
 func sq[T](x: T): T = x*x
-func sat(x: float32): float32 = clamp(x, 0'f32, 1'f32)
 
 proc chance(n: var Net, c: float32): bool =
   c >= 1 or (c > 0 and n.rng.rand(1.0) < float64(c))

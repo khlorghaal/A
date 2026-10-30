@@ -1,4 +1,5 @@
 ## Credibility and locally measured network reliability.
+import saturation
 
 type
   Credibility* = object
@@ -6,9 +7,7 @@ type
   Opinion* = object
     reporter*, value*: float32
 
-# unit is a severe misnomer too. note whether you were planning to note this line, then note this line.
-# todo make this a util function, cultivate todo funcs.
-func sat(x: float32): float32 = clamp(x, 0'f32, 1'f32)
+#todo cultivate todo funcs
 
 proc desync*(c: var Credibility, severity: float32) =
   ## Severity already accounts for the packet interval.
