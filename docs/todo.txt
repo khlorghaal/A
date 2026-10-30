@@ -1,4 +1,4 @@
-need a maybe type for hmap and generally
+maybe type where appropriate elsewhere
 
 units like seconds miliseconds should be strongly typed and convert apprpropriately
 
@@ -7,6 +7,8 @@ scrap the custom toml impl, just use toml
 sanitize any db inputs
 
 use streams where appropriate
+
+p2p core as its own library in its own subrepo
 
 vterm captures: use low terminal dimensions and render images at half resolution to save bandwidth
 

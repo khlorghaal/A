@@ -1,5 +1,5 @@
 ## Fixed-depth buckets; a mutation can invalidate references into the map.
-import std/hashes
+import std/[hashes, options]
 import doot_hash
 
 const BucketDepth* = 4
@@ -42,6 +42,10 @@ func find[K, V](m: HMap[K, V], key: K): int =
   -1
 
 func contains*[K, V](m: HMap[K, V], key: K): bool = m.find(key) >= 0
+
+proc get*[K, V](m: HMap[K, V], key: K): Option[V] =
+  let i = m.find(key)
+  if i < 0: none(V) else: some(m.slots[i].value)
 
 proc `[]`*[K, V](m: HMap[K, V], key: K): V =
   let i = m.find(key)
