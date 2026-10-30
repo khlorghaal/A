@@ -12,11 +12,11 @@ type
     state*    : bool # read directly; use set to update confidence too
     confidence: float32
 
-  Influence = tuple[bytes: seq[byte], w, age: float64]
+  Influence = tuple[bytes: seq[byte], w: float64, age: Seconds]
 
   Report = object
     revision : uint64
-    time, age: float64
+    time, age: Seconds
     bytes    : seq[byte]
 
   Sync* = object
@@ -26,10 +26,10 @@ type
     reports    : Table[tuple[source: PeerId, entity: Uid], Report]
     keys       : Table[uint64, Uid]
     serial     : uint64
-    time       : float64
+    time       : Seconds
     rate*      : float32
-    ttl*       : float64
-    horizon*   : float64
+    ttl*       : Seconds
+    horizon*   : Seconds
     ownerBonus*: float32
 
 proc set*(x: var sync_b, b: bool) =
@@ -45,7 +45,7 @@ proc drift*(m: var sync_k2, dt: float64) =
 
 proc initSync*(n: var Net, kind: KindId): Sync =
   Sync(kind: n.register(kind, dropOld = true),
-       rate: 8, ttl: 2, horizon: 0.25, ownerBonus: 0.3)
+       rate: 8, ttl: Seconds(2), horizon: Seconds(0.25), ownerBonus: 0.3)
 
 func finite(x: SomeFloat): bool =
   classify(x) notin {fcNan, fcInf, fcNegInf}
@@ -140,7 +140,7 @@ proc ingest[T](s: var Sync, entities: openArray[T]) =
       continue
 
     s.reports[index] = Report(revision: d.revision, time: s.time,
-                              age: float64(d.age), bytes: d.bytes)
+                              age: d.age, bytes: d.bytes)
   s.kind.queue.setLen(0)
 
 func toward(a, b, alpha: float32): float32 =
@@ -183,9 +183,10 @@ iterator influences(s: Sync, n: Net, entity: Uid): Influence =
 proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
                    dt: float64, selfTrust = 0'f32) =
   doAssert dt >= 0 and finite(dt)
-  doAssert finite(s.horizon) and s.horizon >= 0
-  doAssert finite(s.ownerBonus) and finite(s.rate) and finite(s.ttl) and s.ttl > 0
-  s.time += dt
+  doAssert finite(float64(s.horizon)) and s.horizon >= Seconds(0)
+  doAssert finite(s.ownerBonus) and finite(s.rate) and
+           finite(float64(s.ttl)) and s.ttl > Seconds(0)
+  s.time += Seconds(dt)
   s.ingest(entities)
 
   # Build a weighted target from fresh peer reports, then ease local state to it.
@@ -202,7 +203,7 @@ proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
         when field is sync_k2:
           if age > s.horizon: fresh = false
           else:
-            field.drift(age)
+            field.drift(float64(age))
             if not finite(field.p.x) or not finite(field.p.y): fresh = false
       if not fresh: continue
 

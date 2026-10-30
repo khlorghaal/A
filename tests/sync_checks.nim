@@ -150,7 +150,7 @@ block kineticSamples:
   sample.age = Seconds(0.2)
 
   var rx = initSync(n, 9)
-  rx.horizon = 1
+  rx.horizon = Seconds(1)
   var bodies = @[Body(id: id, kin: sync_k2(p: (2,0), v: (10,0)), tag: 17)]
   rx.publish(bodies)
   rx.kind.queue.add (1'u64, sample)
@@ -210,7 +210,7 @@ block kineticSamples:
 
   var expired = initSync(n, 11)
   expired.publish(bodies)
-  sample.age = Seconds(expired.ttl)
+  sample.age = expired.ttl
   expired.kind.queue.add (1'u64, sample)
   expired.reconcile(n, bodies, 0.1)
   doAssert bodies[0].kin == old

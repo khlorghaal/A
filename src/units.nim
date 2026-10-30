@@ -8,6 +8,9 @@ type
 func `<`*(a, b: Milliseconds): bool {.borrow.}
 func `==`*(a, b: Milliseconds): bool {.borrow.}
 func `+`*(a, b: Seconds): Seconds {.borrow.}
+func `-`*(a, b: Seconds): Seconds {.borrow.}
+func `<`*(a, b: Seconds): bool {.borrow.}
+func `<=`*(a, b: Seconds): bool {.borrow.}
 proc `+=`*(a: var Seconds, b: Seconds) = a = a + b
 
 func seconds*(ms: Milliseconds): Seconds =
