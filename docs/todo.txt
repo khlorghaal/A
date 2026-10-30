@@ -31,10 +31,6 @@ weight each paragon or swarm report by its reporter's combined credibility
 credibility and reliability
 	persistence, and witness propagation
 	
-owner control
-  data from an entity's owner gets +.3 cred
-
-
 defer>>>
 
 toml_serialization: report TOML 1.0 writer escapes for apostrophe and ESC upstream

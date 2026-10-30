@@ -45,7 +45,7 @@ proc drift*(m: var sync_k2, dt: float64) =
 
 proc initSync*(n: var Net, kind: KindId): Sync =
   Sync(kind: n.register(kind, dropOld = true),
-       rate: 8, ttl: 2, horizon: 0.25, ownerBonus: 4)
+       rate: 8, ttl: 2, horizon: 0.25, ownerBonus: 0.3)
 
 func finite(x: SomeFloat): bool =
   classify(x) notin {fcNan, fcInf, fcNegInf}
@@ -172,9 +172,13 @@ iterator influences(s: Sync, n: Net, entity: Uid): Influence =
     let peer = n.peers.getOrDefault(index.source)
     if peer.isNil or peer notin n.all: continue
 
-    let trust = if n.positionTrust.isNil: peer.trust else: n.positionTrust(peer)
-    let w = float64(s.weight(index.source, entity, trust))
-    if w > 0: yield (report.bytes, w, age)
+    let bonus = if index.source != 0 and s.owners.getOrDefault(entity) == index.source:
+                  max(0'f32, s.ownerBonus)
+                else: 0'f32
+    let trust = if n.positionTrust.isNil: s.weight(index.source, entity, peer.trust)
+                else: n.positionTrust(peer, bonus)
+    let w = float64(trust)
+    if finite(w) and w > 0: yield (report.bytes, w, age)
 
 proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
                    dt: float64, selfTrust = 0'f32) =

@@ -35,7 +35,7 @@ synchronization details
 ├─ duplicates and reordered revisions do not refresh a report's age
 ├─ kinetic records expire at .25s; other records default to 2s
 ├─ expired motion does not imply stopping; local simulation retains velocity
-├─ ownerBonus defaults to 4; finite owner preference does not prevent dilution
+├─ ownerBonus defaults to 0.3 credibility; finite owner preference does not prevent dilution
 ├─ sync_b has .6/.4 hysteresis and is not reliable event delivery
 ├─ records encode 128-bit entity ID, publisher revision and marked fields in little-endian order
 ├─ decoding walks the existing byte sequence with a cursor; StringStream would require converting it to a string
@@ -53,11 +53,11 @@ Doot map
 └─ Monte Carlo allocation grows until padding fits, with no imposed growth cap
 
 Owner influence measurements (deterministic simulation)
-├─ make owner_measurements: 25ms ticks, seed 123, owner bonus 4
+├─ make owner_measurements: 25ms ticks, seed 123, owner bonus 0.3
+├─ fixture uses raw peer trust without the credibility/reliability position policy
 ├─ matrix: 2, 4, 8 and 16 peers; 0, 40, 80 and 160ms latency, half-latency jitter
-│  └─ 25% loss except zero-latency case; one-time jump settles from 7.03 down to 1.50 at owner
-├─ after a one-time 8-cell owner jump, repeated reports settle near 5.70 cells
-│  with no delay and 4.42 with 80ms delay, 35ms jitter and 25% loss
-├─ holding the owner at 8 converges near 8; with one peer held at 0, the owner
-│  settles near 7.86 and the other two peers near 7.20
-└─ these are fixture outcomes, not authority guarantees or the proposed +.3 rule
+│  └─ 25% loss except zero-latency case; one-time jump settles from 4.74 down to 0.37 at owner
+├─ four peers: impulse settles near 2.61 cells without delay and 1.81 at 80ms
+├─ holding the owner at 8: after 10s the owner is 7.94–8 across the matrix
+├─ four peers with one held dissenting peer: owner near 7.52, other peers near 4.92
+└─ these fixture outcomes show dilution; they are not authority guarantees

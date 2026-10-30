@@ -48,7 +48,7 @@ type
     kinds*          : Table[KindId, Kind]
     pingLimit*      : Milliseconds
 
-    positionTrust*: proc(p: Peer): float32
+    positionTrust*: proc(p: Peer, credibilityBonus: float32): float32
     recordDesync* : proc(p: Peer, severity: float32)
     rng: Rand
 

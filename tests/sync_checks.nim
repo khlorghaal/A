@@ -27,7 +27,7 @@ tx.owners[id] = 1
 rx.owners[id] = 1
 rx.publish(b) # registers the known entity IDs; updates cannot create entities
 
-doAssert rx.weight(1, id, 0.25) == 4.25
+doAssert abs(rx.weight(1, id, 0.25) - 0.55) < 0.00001
 doAssert rx.weight(2, id, 0.25) == 0.25
 
 # Exercise the actual P2P kind, transmission sampling and incoming queue.
@@ -50,10 +50,41 @@ left.tick()
 right.tick()
 doAssert rx.kind.queue.len == 1
 rx.reconcile(right, b, 0.5)
-doAssert b[0].pos.x > 9 and b[0].pos.x < 10
+let expectedAlpha = 1 - exp(-8 * 0.55 / 1.55 * 0.5)
+doAssert abs(float64(b[0].pos.x) - 10 * expectedAlpha) < 0.0001
 doAssert b[0].trigger.state
-doAssert float32(b[0].scalar) > 5
+doAssert abs(float64(float32(b[0].scalar)) - 6 * expectedAlpha) < 0.0001
 doAssert b[0].health == 99 # unmarked fields stay local
+
+block ownerCredibility:
+  var policy = network(2, 1)
+  var bonuses: seq[float32]
+  policy.positionTrust = proc(p: Peer, bonus: float32): float32 =
+    bonuses.add bonus
+    0.5'f32
+  var own = initSync(policy, 8)
+  own.owners[id] = 1
+  var entities = @[Entity(id: id)]
+  own.publish(entities)
+  own.kind.queue.add (1'u64, tx.kind.row[0])
+  own.reconcile(policy, entities, 0.1)
+  doAssert bonuses.len == 1 and abs(bonuses[0] - 0.3) < 0.00001
+
+  bonuses.setLen(0)
+  var other = initSync(policy, 9)
+  other.owners[id] = 2
+  other.publish(entities)
+  other.kind.queue.add (1'u64, tx.kind.row[0])
+  other.reconcile(policy, entities, 0.1)
+  doAssert bonuses == @[0'f32]
+
+  policy.positionTrust = proc(p: Peer, bonus: float32): float32 = Inf.float32
+  var invalid = initSync(policy, 10)
+  var unchanged = @[Entity(id: id)]
+  invalid.publish(unchanged)
+  invalid.kind.queue.add (1'u64, tx.kind.row[0])
+  invalid.reconcile(policy, unchanged, 0.1)
+  doAssert unchanged[0].pos == (0'f32, 0'f32)
 
 block senderAge:
   var age = 0.0

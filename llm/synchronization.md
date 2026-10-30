@@ -14,7 +14,7 @@ The default horizon is 0.25s. A record containing kinematics is ignored beyond t
 
 ## Trust and correction
 
-Sync.owners maps entity UIDs to peer IDs. It is local session state, never inferred from position packets. ownerBonus defaults to 4, increased from the earlier 0.5; negative effective trust is clamped to zero and nonfinite peer trust is ignored. The demonstration assigns all initial ships to peer 1; A_PEER_ID selects the local peer (default 1).
+Sync.owners maps entity UIDs to peer IDs. It is local session state, never inferred from position packets. ownerBonus defaults to 0.3 credibility. With a position policy the bonus is applied before credibility and reliability are combined; without one, it is added to the peer's trust weight. Negative weights and nonfinite peer trust are ignored. The demonstration assigns all initial ships to peer 1; A_PEER_ID selects the local peer (default 1).
 
 Each connected sender contributes at most one latest report per entity. Fresh reports, projected to the present, form a trust-weighted target. With incoming trust sum W, local effective trust L, and rate k:
 

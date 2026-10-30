@@ -55,10 +55,11 @@ rx.kind.queue.add (1'u64, first)
 rx.receive(right)
 doAssert abs(rightDb[].swarm[("alice", "bob🙂")] - 0.2) < 0.00001
 rx.attachPositionPolicy(right)
-doAssert right.positionTrust(Peer(info: PeerInfo(id: 3), ping: Milliseconds(-1))) == 0
+doAssert right.positionTrust(Peer(info: PeerInfo(id: 3), ping: Milliseconds(-1)), 0) == 0
 right.reportDesync(1, 1)
 rightDb[].advance(1)
 doAssert rightDb[].witnessed["alice"] < 1
 right.peers[1].ping = Milliseconds(80)
-doAssert abs(right.positionTrust(right.peers[1]) - 0.8) < 0.0001
+doAssert abs(right.positionTrust(right.peers[1], 0) - 0.8) < 0.0001
+doAssert abs(right.positionTrust(right.peers[1], 0.3) - 0.82) < 0.0001
 echo "witness dissemination checks passed"

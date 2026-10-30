@@ -97,7 +97,7 @@ proc kineticRun(count: int, compensate: bool): float32 =
     g.send(p.info.id, Event(event: data, source: PeerInfo(id: active),
                             kind: k.id, datum: d))
 
-  for tick in 0..<320:
+  for tick in 0..<1600:
     g.advance(25)
     for i in 0..<count:
       active = PeerId(i+1)
@@ -110,8 +110,10 @@ proc kineticRun(count: int, compensate: bool): float32 =
       for i in 1..<count:
         result = max(result, abs(bodies[i][0].kin.p.x - bodies[0][0].kin.p.x))
   for i in 1..<count:
-    doAssert abs(bodies[i][0].kin.p.x - bodies[0][0].kin.p.x) < 0.1
-    doAssert abs(bodies[i][0].kin.v.x) < 0.01
+    doAssert abs(bodies[i][0].kin.p.x - bodies[0][0].kin.p.x) < 0.1,
+      "peers=" & $count & " position error=" & $abs(bodies[i][0].kin.p.x - bodies[0][0].kin.p.x)
+    doAssert abs(bodies[i][0].kin.v.x) < 0.01,
+      "peers=" & $count & " residual velocity=" & $bodies[i][0].kin.v.x
 
 for count in [2, 4, 16]:
   let corrected = kineticRun(count, true)

@@ -65,6 +65,6 @@ for peers in [2, 4, 8, 16]:
     let held    = measure(peers, latency, jitter, loss, true,  false)
     let dissent = measure(peers, latency, jitter, loss, true,  true)
     doAssert impulse[0] > 0
-    doAssert abs(held[0] - 8) < 0.01
+    doAssert held[0] > impulse[0] and held[0] <= 8.001
     echo "peers=", peers, " latency=", latency, " impulse=", impulse,
          " held=", held, " dissent=", dissent
