@@ -4,4 +4,4 @@ Sources are in src/. The game uses client.nim for terminal rendering and GUI, an
 
 Initialize the deps/termbox2 submodule and install the Nimble, C and Clang dependencies before building. Run `make`, `make check`, `make test`, or `make run`. The game follows the local ship with a simple position offset.
 
-Futhark generates terminal bindings from deps/termbox.h. After changing a header, regenerate its cached imports, for example with `make fgs=-d:opirRebuild`.
+Futhark generates terminal bindings from deps/termbox.h. Force regeneration with `make -B build/A fgs=-d:opirRebuild`.
