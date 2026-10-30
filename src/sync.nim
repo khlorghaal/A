@@ -37,9 +37,9 @@ type
     horizon*   : float64
     ownerBonus*: float32
 
-proc set*(x: var sync_b, value: bool) =
-  x.state = value
-  x.confidence = (if value: 1'f32 else: 0'f32)
+proc set*(x: var sync_b, b: bool) =
+  x.state = b
+  x.confidence = (if b: 1'f32 else: 0'f32)
 
 func  sv*(x, y: float32): sync_v2 = (x, y) # tuple constructor
 func `+`*(a, b: sync_v2): sync_v2 = sv(a.x + b.x, a.y + b.y)
