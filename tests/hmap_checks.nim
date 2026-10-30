@@ -1,14 +1,13 @@
 import ../src/hmap
-import std/options
 
 var m = initHMap[int32, string](1)
-doAssert m.get(1'i32).isNone
+doAssert not m.get(1'i32).present
 for i in 0'i32..<200'i32: m[i] = $i
 doAssert m.len == 200
 for i in 0'i32..<200'i32: doAssert m[i] == $i
 m[7'i32] = "seven"
 doAssert m.len == 200 and m[7'i32] == "seven"
-doAssert m.get(7'i32).get == "seven"
+doAssert m.get(7'i32).present and m.get(7'i32).value == "seven"
 for i in 0'i32..<200'i32:
   doAssert m.del(i)
   doAssert not m.contains(i)
@@ -17,6 +16,11 @@ doAssert m.len == 0
 m[4'i32] = "four"
 m.clear()
 doAssert m.len == 0 and not m.contains(4'i32)
-doAssert m.get(4'i32).isNone
+doAssert not m.get(4'i32).present
+
+var pointers = initHMap[int32, pointer]()
+pointers[1'i32] = nil
+doAssert pointers.get(1'i32).present and pointers.get(1'i32).value == nil
+doAssert not pointers.get(2'i32).present
 
 echo "doot hash map checks passed"

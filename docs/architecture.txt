@@ -43,7 +43,7 @@ Doot hash
 
 Doot map
 ├─ src/hmap.nim uses fixed-depth buckets with packed deletion
-├─ get returns an Option for missing keys; [] raises KeyError
+├─ get returns a Maybe for missing keys, including stored nil; [] raises KeyError
 ├─ padding reserves room during expansion
 └─ Monte Carlo allocation grows until padding fits, with no imposed growth cap
 
