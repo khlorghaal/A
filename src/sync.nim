@@ -2,9 +2,6 @@ import std/[tables, math]
 import p2p
 
 #fixme  this has lots of odd semantics regarding betas, consoder inlining
-# agents+= do not make trivial functions for semantics
-#todo agents += make heavy use of noting my code preferences. look at my smaller diffs for learning style cues, mem note them and note in agents
-
 type
   Uid*     = tuple[h, l: uint64]
   sync_f*  = distinct float32
