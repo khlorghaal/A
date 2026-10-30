@@ -43,6 +43,9 @@ accept = proc(p: Peer, k: Kind, d: Datum): bool = true
 sendPeers = proc(p: Peer, infos: seq[PeerInfo]) = discard
 
 tx.publish(a)
+doAssert tx.kind.row[0].bytes == @[
+  11'u8, 0, 0, 0, 0, 0, 0, 0, 22, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 32, 65, 0, 0, 160, 65, 1, 0, 0, 192, 64]
 left.tick()
 right.tick()
 doAssert rx.kind.queue.len == 1

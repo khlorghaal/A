@@ -70,8 +70,9 @@ proc get(bytes: seq[byte], at: var int, count: int): uint64 =
   for i in 0..<count: result = result or (uint64(bytes[at + i]) shl (i*8))
   at += count
 
-proc put(bytes: var seq[byte], value: float32) =
-  bytes.put(cast[uint32](value), 4)
+proc `+=`(bytes: var seq[byte], value: uint64)  = bytes.put(value, 8)
+proc `+=`(bytes: var seq[byte], value: float32) = bytes.put(cast[uint32](value), 4)
+proc `+=`(bytes: var seq[byte], value: bool)    = bytes.put(uint64(ord(value)), 1)
 
 proc getFloat(bytes: seq[byte], at: var int): float32 =
   result = cast[float32](uint32(bytes.get(at, 4)))
@@ -84,22 +85,21 @@ proc getBool(bytes: seq[byte], at: var int): bool =
   value == 1
 
 proc encode[T](entity: T): seq[byte] =
-  #todo operator or macro for result.put => (res+=) or whatever. report on
-  result.put(entity.id.h, 8)
-  result.put(entity.id.l, 8)
+  result += entity.id.h
+  result += entity.id.l
   for _, field in fieldPairs(entity):
     when field is sync_k2:
-      result.put(field.p.x)
-      result.put(field.p.y)
-      result.put(field.v.x)
-      result.put(field.v.y)
+      result += field.p.x
+      result += field.p.y
+      result += field.v.x
+      result += field.v.y
     elif field is sync_v2:
-      result.put(field.x)
-      result.put(field.y)
+      result += field.x
+      result += field.y
     elif field is sync_f:
-      result.put(float32(field))
+      result += float32(field)
     elif field is sync_b:
-      result.put(uint64(ord(field.state)), 1)
+      result += field.state
 
 proc decode[T](bytes: seq[byte], entity: var T) =
   var at = 0
