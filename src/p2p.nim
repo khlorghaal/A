@@ -79,7 +79,7 @@ proc register*(n: var Net, id: KindId,
   n.kinds[id] = result
 
 func sq[T](x: T): T = x*x
-func unit(x: float32): float32 = clamp(x, 0'f32, 1'f32)
+func sat(x: float32): float32 = clamp(x, 0'f32, 1'f32)
 
 proc chance(n: var Net, c: float32): bool =
   c >= 1 or (c > 0 and n.rng.rand(1.0) < float64(c))
@@ -191,7 +191,7 @@ proc tick*(n: var Net, dt = 0.0) =
     let rate = 0.02'f32 + 0.2'f32*n.pressure
     n.eachPct(n.near, rate):
       let roll = sq(n.rng.rand(1.0))
-      let keep = float64(unit(retention(it)))
+      let keep = float64(sat(retention(it)))
       if roll > keep: n.place(it, far = true)
 
   #pair
@@ -203,7 +203,7 @@ proc tick*(n: var Net, dt = 0.0) =
   #smack
   n.rng.shuffle(n.all)
   for p in n.all:
-    var rate = unit(p.up.coefficient)
+    var rate = sat(p.up.coefficient)
     if p in n.far: rate *= rate
 
     for k in n.kinds.values: #row
