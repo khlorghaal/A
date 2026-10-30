@@ -48,7 +48,7 @@ right.tick()
 doAssert rx.kind.queue.len == 1
 rx.reconcile(right, b, 0.5)
 doAssert b[0].pos.x > 9 and b[0].pos.x < 10
-doAssert b[0].trigger.value
+doAssert b[0].trigger.state
 doAssert float32(b[0].scalar) > 5
 doAssert b[0].health == 99 # unmarked fields stay local
 
@@ -99,7 +99,7 @@ a[0].trigger.set(false)
 tx.publish(a)
 rx.kind.queue.add (1'u64, tx.kind.row[0])
 rx.reconcile(right, b, 0.5)
-doAssert not b[0].trigger.value
+doAssert not b[0].trigger.state
 
 echo "sync checks passed"
 

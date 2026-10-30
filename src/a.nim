@@ -83,7 +83,7 @@ proc act(a: Action) =
   of actL: ships[0].kin.p += sv(-1, 0)
   of actR: ships[0].kin.p += sv( 1, 0)
   of actD: ships[0].kin.p += sv( 0, 1)
-  of actF: ships[0].trigger.set(not ships[0].trigger.value)
+  of actF: ships[0].trigger.set(not ships[0].trigger.state)
 
 proc stepShips(dt = 0.025) =
   for i in 0..<shipsEnd:

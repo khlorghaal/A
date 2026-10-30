@@ -14,7 +14,7 @@ type
   sync_k2* = object
     p*, v*: sync_v2 # position, velocity
   sync_b*  = object # boolean state with confidence and hysteresis
-    state     : bool
+    state*    : bool # read directly; use set to update confidence too
     confidence: float32
 
   Influence = tuple[bytes: seq[byte], w, age: float64]
@@ -40,9 +40,6 @@ type
 proc set*(x: var sync_b, value: bool) =
   x.state = value
   x.confidence = (if value: 1'f32 else: 0'f32)
-
-func value*(x: sync_b): bool = x.state
-#fixme this is retarded, report: why is this an accessor? is it being used by some polymorph??
 
 func  sv*(x, y: float32): sync_v2 = (x, y) # tuple constructor
 func `+`*(a, b: sync_v2): sync_v2 = sv(a.x + b.x, a.y + b.y)
@@ -102,7 +99,7 @@ proc encode[T](entity: T): seq[byte] =
     elif field is sync_f:
       result.put(float32(field))
     elif field is sync_b:
-      result.put(uint64(ord(field.value)), 1)
+      result.put(uint64(ord(field.state)), 1)
 
 proc decode[T](bytes: seq[byte], entity: var T) =
   var at = 0
