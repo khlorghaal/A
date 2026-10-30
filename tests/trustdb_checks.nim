@@ -32,6 +32,17 @@ doAssert abs(loaded.witnessed["quote\"\\\n"] - 0.7) < 0.00001
 doAssert loaded.swarm.len == 0
 doAssert not fileExists(dir / "trust_swarm.toml")
 
+var direct: TrustDb
+direct.witnessed[decomposed] = 0.3
+direct.save(dir)
+doAssert abs(load(dir).witnessed[composed] - 0.3) < 0.00001
+direct.witnessed[composed] = 0.4
+try:
+  direct.save(dir)
+  doAssert false
+except ValueError: discard
+doAssert abs(load(dir).witnessed[composed] - 0.3) < 0.00001
+
 db.refresh()
 db.refresh()
 doAssert abs(db.credibility(composed) - 0.6) < 0.00001

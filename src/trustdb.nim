@@ -89,8 +89,10 @@ proc writeDb(path: string, values: Table[string, float32]) =
   var sections: Sections
   sections["trust"] = initTable[string, JsonNode]()
   for id, value in values:
-    discard checkedId(id, value)
-    sections["trust"][id] = %value
+    let normalized = checkedId(id, value)
+    if normalized in sections["trust"]:
+      raise newException(ValueError, "duplicate normalized player ID in " & path)
+    sections["trust"][normalized] = %value
   writeSections(path, sections)
 
 proc load*(directory: string): TrustDb =
