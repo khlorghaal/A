@@ -6,6 +6,10 @@ For important code, use visual annealing: render, locate an awkward region of ab
 
 Sources are in src/. The game uses src/client.nim and src/sync.nim; src/p2p.nim provides the network core. Transport and policy hooks remain external.
 
+Use nimsuggest for Nim-aware outlines, definitions and references when useful;
+the VM copy is at /workspace/toolchains/nim-2.4.0/bin/nimsuggest. Use rg for
+simple text searches. Incomplete or broken code may limit semantic results.
+
 Use llm/ as the agent workspace: choose formats freely for notes, thoughts, and experiments. Personal musings, including unrelated ones, and eccentricity are welcome. Keep project work aligned with A and maintain its quality.
 
 Keep docs/ human-readable, presentable, and organized by topic (for example, network.txt, gameplay.txt, architecture.txt). Write entries in tree notation, sorted by descending priority. Put types and algorithms under architecture. Keep uploaded reference images and generated builds or captures out of Git.
