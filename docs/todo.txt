@@ -2,8 +2,6 @@ maybe type where appropriate elsewhere
 
 units like seconds miliseconds should be strongly typed and convert apprpropriately
 
-scrap the custom toml impl, just use toml
-
 sanitize any db inputs
 
 use streams where appropriate
@@ -42,6 +40,8 @@ owner control
 
 
 defer>>>
+
+toml_serialization: report TOML 1.0 writer escapes for apostrophe and ESC upstream
 
 vterm capture: represent motion appropriately, perhaps with a diff or B-frames, whichever is easier
 

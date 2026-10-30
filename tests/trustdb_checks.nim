@@ -18,6 +18,8 @@ for invalid in ["", "bad\0id", "\xFF"]:
 db.setWitness(composed, 0.8)
 db.setWitness(decomposed, 0.8)
 db.setWitness("quote\"\\\n", 0.7)
+db.setWitness("apostrophe' and esc\x1b", 0.6)
+db.setWitness("literal\\e and \\'", 0.4)
 db.setParagon(composed, 0.5)
 db.setWitness("alice", 1)
 db.setParagon("alice", 1)
@@ -29,6 +31,8 @@ doAssert abs(loaded.witnessed[composed] - 0.8) < 0.00001
 doAssert decomposed notin loaded.witnessed
 doAssert abs(loaded.credibility(decomposed) - loaded.credibility(composed)) < 0.00001
 doAssert abs(loaded.witnessed["quote\"\\\n"] - 0.7) < 0.00001
+doAssert abs(loaded.witnessed["apostrophe' and esc\x1b"] - 0.6) < 0.00001
+doAssert abs(loaded.witnessed["literal\\e and \\'"] - 0.4) < 0.00001
 doAssert loaded.swarm.len == 0
 doAssert not fileExists(dir / "trust_swarm.toml")
 
@@ -42,6 +46,9 @@ try:
   doAssert false
 except ValueError: discard
 doAssert abs(load(dir).witnessed[composed] - 0.3) < 0.00001
+
+writeFile(dir / "trust_witnessed.toml", "[trust]\nalice = 0.5 # standard TOML comment\n")
+doAssert abs(load(dir).witnessed["alice"] - 0.5) < 0.00001
 
 db.refresh()
 db.refresh()
@@ -66,6 +73,11 @@ except ValueError: discard
 removeFile(dir / "trust_witnessed.toml")
 
 writeFile(dir / "trust_paragon.toml", "[trust]\n\"bad\" = 1.5\n")
+try:
+  discard load(dir)
+  doAssert false
+except ValueError: discard
+writeFile(dir / "trust_paragon.toml", "[trust]\n\"bad\" = [1, 2]\n")
 try:
   discard load(dir)
   doAssert false

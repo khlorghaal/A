@@ -25,6 +25,9 @@ current code
 ├─ src/client.nim owns terminal initialization, drawing, controls and debug header
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
 
+Trust persistence
+└─ toml_serialization reads and writes TOML 1.0; IDs are normalized and validated
+
 synchronization details
 ├─ each kinetic record pairs position and velocity; no acceleration or intent prediction
 ├─ sender-row, transport and cached time contribute to sample age

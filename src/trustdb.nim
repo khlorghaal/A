@@ -1,6 +1,7 @@
 ## Persistent credibility values; swarm reports remain in memory.
-import std/[json, math, os, sets, tables]
-import trust, tomlrows, identity
+import std/[math, os, sets, tables]
+import toml_serialization
+import trust, identity
 
 type
   TrustDb* = object
@@ -72,28 +73,48 @@ proc advance*(db: var TrustDb, dt: float32) =
   db.refresh()
 
 proc readDb(path: string): Table[string, float32] =
-  let sections = readSections(path)
   if not fileExists(path): return
-  if sections.len != 1 or "trust" notin sections:
+  var root: TomlValueRef
+  try: root = Toml_v100.decode(readFile(path), TomlValueRef)
+  except TomlError as e: raise newException(ValueError, "invalid trust TOML: " & e.msg)
+  if root.kind != TomlKind.Table or root.tableVal.len != 1 or
+     "trust" notin root.tableVal or root.tableVal["trust"].kind notin {TomlKind.Table, TomlKind.InlineTable}:
     raise newException(ValueError, "invalid trust TOML: " & path)
-  for id, node in sections["trust"]:
-    if node.kind notin {JFloat, JInt}:
-      raise newException(ValueError, "invalid credibility")
-    let value = node.getFloat().float32
+  for id, node in root.tableVal["trust"].tableVal:
+    let value = case node.kind
+      of TomlKind.Float: float32(node.floatVal)
+      of TomlKind.Int:   float32(node.intVal)
+      else: raise newException(ValueError, "invalid credibility")
     let normalized = checkedId(id, value)
     if normalized in result:
       raise newException(ValueError, "duplicate normalized player ID in " & path)
     result[normalized] = value
 
 proc writeDb(path: string, values: Table[string, float32]) =
-  var sections: Sections
-  sections["trust"] = initTable[string, JsonNode]()
+  let root = Toml_v100.decode("[trust]\n", TomlValueRef)
+  let trust = root.tableVal["trust"]
   for id, value in values:
     let normalized = checkedId(id, value)
-    if normalized in sections["trust"]:
+    if normalized in trust.tableVal:
       raise newException(ValueError, "duplicate normalized player ID in " & path)
-    sections["trust"][normalized] = %value
-  writeSections(path, sections)
+    trust.tableVal[normalized] = TomlValueRef(kind: TomlKind.Float, floatVal: value.float64)
+  # The library emits non-TOML 1.0 escapes for ESC and apostrophe.
+  let encoded = Toml_v100.encode(root)
+  var data = ""
+  var i = 0
+  while i < encoded.len:
+    if encoded[i] == '\\' and i + 1 < encoded.len:
+      case encoded[i+1]
+      of 'e':  data.add "\\u001B"
+      of '\'': data.add '\''
+      else:    data.add encoded[i..i+1]
+      i += 2
+    else:
+      data.add encoded[i]
+      inc i
+  let tmp = path & ".tmp"
+  writeFile(tmp, data)
+  moveFile(tmp, path)
 
 proc load*(directory: string): TrustDb =
   result.witnessed = readDb(directory / "trust_witnessed.toml")

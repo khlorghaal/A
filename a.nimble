@@ -4,4 +4,4 @@ description = "A — a ship"
 license     = "GPL-3.0"
 srcDir      = "src"
 
-requires "nim >= 2.0.0", "futhark"
+requires "nim >= 2.0.0", "futhark", "toml_serialization >= 0.2.20"
