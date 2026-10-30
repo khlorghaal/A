@@ -20,7 +20,7 @@ var left  = network(1, 2)
 var right = network(2, 1)
 var tx = initSync(left, 7)
 var rx = initSync(right, 7)
-var a = @[Entity(id: id, pos: sv(10,20), scalar: sync_f(6), health: 10)]
+var a = @[Entity(id: id, pos: (10,20), scalar: sync_f(6), health: 10)]
 var b = @[Entity(id: id, health: 99)]
 a[0].trigger.set(true)
 tx.owners[id] = 1
@@ -113,14 +113,14 @@ block kineticSamples:
     tag: int
   var n = network(2, 1)
   var tx = initSync(n, 8)
-  var source = @[Body(id: id, kin: sync_k2(p: sv(0,0), v: sv(10,0)))]
+  var source = @[Body(id: id, kin: sync_k2(p: (0,0), v: (10,0)))]
   tx.publish(source)
   var sample = tx.kind.row[0]
   sample.age = Seconds(0.2)
 
   var rx = initSync(n, 9)
   rx.horizon = 1
-  var bodies = @[Body(id: id, kin: sync_k2(p: sv(2,0), v: sv(10,0)), tag: 17)]
+  var bodies = @[Body(id: id, kin: sync_k2(p: (2,0), v: (10,0)), tag: 17)]
   rx.publish(bodies)
   rx.kind.queue.add (1'u64, sample)
   rx.reconcile(n, bodies, 0.01)
@@ -132,7 +132,7 @@ block kineticSamples:
   doAssert bodies[0].tag == 17
 
   # A stop is a new velocity sample, not an inferred intention.
-  source[0].kin = sync_k2(p: sv(7,0), v: sv(0,0))
+  source[0].kin = sync_k2(p: (7,0), v: (0,0))
   tx.publish(source)
   sample = tx.kind.row[0]
   sample.age = Seconds(0.15)
@@ -145,7 +145,7 @@ block kineticSamples:
   capped.rate = 1000
   bodies[0].kin = sync_k2()
   capped.publish(bodies)
-  tx.publish(@[Body(id: id, kin: sync_k2(v: sv(10,0)))])
+  tx.publish(@[Body(id: id, kin: sync_k2(v: (10,0)))])
   sample = tx.kind.row[0]
   sample.age = Seconds(0.25)
   capped.kind.queue.add (1'u64, sample)
@@ -169,7 +169,7 @@ block kineticSamples:
     doAssert bodies[0].kin == old
 
   # Finite coordinates may still overflow during projection.
-  tx.publish(@[Body(id: id, kin: sync_k2(p: sv(3.4e38,0), v: sv(3.4e38,0)))])
+  tx.publish(@[Body(id: id, kin: sync_k2(p: (3.4e38,0), v: (3.4e38,0)))])
   sample = tx.kind.row[0]
   sample.revision = 100
   sample.age = Seconds(0.25)

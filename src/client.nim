@@ -1,6 +1,6 @@
 import std/[os, unicode, math]
 import futhark
-from sync import sync_v2, sv
+from sync import sync_v2
 
 const root = currentSourcePath().parentDir.parentDir
 {.passC: "-I" & root.}

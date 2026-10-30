@@ -36,12 +36,11 @@ proc set*(x: var sync_b, b: bool) =
   x.state = b
   x.confidence = (if b: 1'f32 else: 0'f32)
 
-func  sv*(x, y: float32): sync_v2 = (x, y) # tuple constructor
-func `+`*(a, b: sync_v2): sync_v2 = sv(a.x + b.x, a.y + b.y)
+func `+`*(a, b: sync_v2): sync_v2 = (a.x + b.x, a.y + b.y)
 proc `+=`*(a: var sync_v2, b: sync_v2) = a = a + b
 
 proc drift*(m: var sync_k2, dt: float64) =
-  m.p += sv(m.v.x * float32(dt), m.v.y * float32(dt))
+  m.p += (m.v.x * float32(dt), m.v.y * float32(dt))
 #todo use lambdas for oneline equations
 
 proc initSync*(n: var Net, kind: KindId): Sync =
@@ -101,10 +100,10 @@ proc decode[T](bytes: seq[byte], entity: var T) =
   entity.id = (bytes.get(at, 8), bytes.get(at, 8))
   for _, field in fieldPairs(entity):
     when field is sync_k2:
-      field.p = sv(bytes.getFloat(at), bytes.getFloat(at))
-      field.v = sv(bytes.getFloat(at), bytes.getFloat(at))
+      field.p = (bytes.getFloat(at), bytes.getFloat(at))
+      field.v = (bytes.getFloat(at), bytes.getFloat(at))
     elif field is sync_v2:
-      field = sv(bytes.getFloat(at), bytes.getFloat(at))
+      field = (bytes.getFloat(at), bytes.getFloat(at))
     elif field is sync_f:
       field = sync_f(bytes.getFloat(at))
     elif field is sync_b:

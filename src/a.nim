@@ -74,24 +74,24 @@ proc initShips() =
       id : genUid(),
       hp : 16, cd: 0, msl: 255,
       chr: Grapheme("A"), fac: 0xeeeeee,
-      kin: sync_k2(p: sv(float32(i*2 - 8), float32(i mod 2*3))))
+      kin: sync_k2(p: (float32(i*2 - 8), float32(i mod 2*3))))
     replication.owners[ships[i].id] = 1
 
 proc act(a: Action) =
   case a
-  of actU: ships[0].kin.p += sv( 0,-1)
-  of actL: ships[0].kin.p += sv(-1, 0)
-  of actR: ships[0].kin.p += sv( 1, 0)
-  of actD: ships[0].kin.p += sv( 0, 1)
+  of actU: ships[0].kin.p += ( 0'f32,-1'f32)
+  of actL: ships[0].kin.p += (-1'f32, 0'f32)
+  of actR: ships[0].kin.p += ( 1'f32, 0'f32)
+  of actD: ships[0].kin.p += ( 0'f32, 1'f32)
   of actF: ships[0].trigger.set(not ships[0].trigger.state)
 
 proc stepShips(dt = 0.025) =
   for i in 0..<shipsEnd:
     when not defined(simSockets):
       case hrng() mod 5
-      of 0: ships[i].kin.v = sv( 40, 0)
-      of 1: ships[i].kin.v = sv(-40, 0)
-      else: ships[i].kin.v = sv(  0, 0)
+      of 0: ships[i].kin.v = ( 40, 0)
+      of 1: ships[i].kin.v = (-40, 0)
+      else: ships[i].kin.v = (  0, 0)
     ships[i].kin.drift(dt)
 
   replication.reconcile(net, liveShips, dt)
@@ -108,7 +108,7 @@ proc main(): int =
 
   initShips()
   when defined(simSockets):
-    ships[0].kin.v = sv(getEnv("A_TEST_VX", "0").parseFloat.float32, 0)
+    ships[0].kin.v = (getEnv("A_TEST_VX", "0").parseFloat.float32, 0)
     net.bindClient(Port(getEnv("A_GATEWAY_PORT").parseInt))
   replication.publish(liveShips)
   t0 = nowUs()

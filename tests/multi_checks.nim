@@ -39,7 +39,7 @@ for i in 0..<4:
     nets[i].near.add p
   states[i] = initSync(nets[i], 7)
   states[i].owners[id] = 1
-  entities[i] = @[Entity(id: id, pos: sv(if i == 0: 10 else: 0, 0))]
+  entities[i] = @[Entity(id: id, pos: ((if i == 0: 10'f32 else: 0'f32), 0'f32))]
   states[i].publish(entities[i])
 
 gather = proc(): seq[Event] = gateway.recv(active)
@@ -55,7 +55,7 @@ for tick in 0..<500:
   gateway.advance(25)
   for i in 0..<4:
     active = PeerId(i + 1)
-    if i == 0: entities[i][0].pos = sv(10, 0)
+    if i == 0: entities[i][0].pos = (10, 0)
     states[i].publish(entities[i])
     nets[i].tick()
     if i != 0: states[i].reconcile(nets[i], entities[i], 0.025)
@@ -86,7 +86,7 @@ proc kineticRun(count: int, compensate: bool): float32 =
     syncs.add initSync(n, 7)
     syncs[^1].owners[id] = 1
     nets.add n
-    bodies.add @[Body(id: id, kin: sync_k2(v: sv(10,0)))]
+    bodies.add @[Body(id: id, kin: sync_k2(v: (10,0)))]
     syncs[^1].publish(bodies[^1])
 
   gather = proc(): seq[Event] =
@@ -101,7 +101,7 @@ proc kineticRun(count: int, compensate: bool): float32 =
     g.advance(25)
     for i in 0..<count:
       active = PeerId(i+1)
-      if i == 0 and tick == 160: bodies[i][0].kin.v = sv(0,0)
+      if i == 0 and tick == 160: bodies[i][0].kin.v = (0,0)
       bodies[i][0].kin.drift(0.025)
       syncs[i].publish(bodies[i])
       nets[i].tick()
