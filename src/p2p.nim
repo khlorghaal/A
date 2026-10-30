@@ -1,6 +1,8 @@
 # peers cant desync if a cliebt is barely sank to its own sink
 # maintain evanescent stochastic dendrites
 import std/[tables, sets, random, sequtils, math]
+import units
+export units
 
 type
   PeerId* = uint64
@@ -14,7 +16,7 @@ type
   Peer* = ref object
     info*      : PeerInfo
     trust*     : float32
-    ping*      : int64 # ms
+    ping*      : Milliseconds # -1 means unknown
     up*, down* : Traffic
     informants*: HashSet[PeerId]
 
@@ -44,7 +46,7 @@ type
     peers*          : Table[PeerId, Peer] # known, connected or not
     near*, far*, all*: seq[Peer] # disjoint near/far; all is their union
     kinds*          : Table[KindId, Kind]
-    pingLimit*      : int64
+    pingLimit*      : Milliseconds
 
     positionTrust*: proc(p: Peer): float32
     recordDesync* : proc(p: Peer, severity: float32)
@@ -68,7 +70,7 @@ var # policy
 
 proc initNet*(selph: PeerInfo, seed: int64): Net =
   doAssert selph.id != 0
-  Net(selph: selph, rng: initRand(seed), pingLimit: 2000)
+  Net(selph: selph, rng: initRand(seed), pingLimit: Milliseconds(2000))
 
 proc register*(n: var Net, id: KindId,
                dropOld = false, once = false, initialFull = false): Kind =
@@ -107,7 +109,7 @@ proc learn(n: var Net, info: PeerInfo, via: PeerId = 0): Peer =
 
   result = n.peers.getOrDefault(info.id)
   if result.isNil:
-    result = Peer(info: info, ping: -1, up: (0'f32, 1'f32))
+    result = Peer(info: info, ping: Milliseconds(-1), up: (0'f32, 1'f32))
     n.peers[info.id] = result
 
     for p in n.all:

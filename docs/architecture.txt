@@ -21,6 +21,7 @@ makefile passes client an arg to indicate what db dir to use, obviously with def
 
 current code
 ├─ src/p2p.nim uses uint64 peer IDs and external authenticated transport hooks
+│  └─ peer ping and its limit use Milliseconds; Seconds conversions are explicit
 ├─ src/sync.nim reconciles marked entity fields and tracks ownership
 ├─ src/client.nim owns terminal initialization, drawing, controls and debug header
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
