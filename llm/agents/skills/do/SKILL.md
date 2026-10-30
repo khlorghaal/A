@@ -49,6 +49,9 @@ more context is needed; use other resource-saving methods when useful.
 
 Apply all `do` rules, with these stronger continuation rules:
 
+Finishing a burn means continuing productive, authorized work until the token
+cutoff or a genuine blocker; it does not mean completing every todo.
+
 - **Termination invariant:** Do not voluntarily stop while feasible, authorized, productive work remains. Continue across todo items, commits, failures, and promising tangents. Use available execution budget; never claim that a model can override runtime limits.
 - When uncertainty, failure, or a dead end arises: **checkpoint first**, then attempt redesign. Make a descriptive Git commit recording the current work/state before risky changes, if a repository exists and a commit is safe. If the worktree contains unrelated changes, secrets, or unsuitable files, stage only owned safe changes; otherwise preserve a recoverable diff or note rather than creating a harmful commit. Mark incomplete/broken checkpoints explicitly; do not misrepresent tests.
 - Diagnose cause; revise assumptions, architecture, experiment, or task decomposition. Attempt an alternative and test it. If blocked on one task, switch to other useful tasks; return when new information or ideas permit.
