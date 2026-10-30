@@ -27,7 +27,7 @@ current code
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
 
 Trust persistence
-└─ toml_serialization reads and writes TOML 1.0; IDs are normalized and validated
+└─ toml_serialization reads through a file input stream and writes TOML 1.0; IDs are normalized and validated
 
 synchronization details
 ├─ each kinetic record pairs position and velocity; no acceleration or intent prediction
@@ -38,6 +38,7 @@ synchronization details
 ├─ ownerBonus defaults to 4; finite owner preference does not prevent dilution
 ├─ sync_b has .6/.4 hysteresis and is not reliable event delivery
 ├─ records encode 128-bit entity ID, publisher revision and marked fields in little-endian order
+├─ decoding walks the existing byte sequence with a cursor; StringStream would require converting it to a string
 ├─ malformed, nonfinite, negative-age, unknown and stale records are rejected
 ├─ expired reports retain watermarks; 64-bit transport keys are collision-checked
 └─ report scanning and repeated decoding remain a scaling limitation

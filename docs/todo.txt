@@ -2,8 +2,6 @@ units like seconds miliseconds should be strongly typed and convert apprpropriat
 
 sanitize any db inputs
 
-use streams where appropriate
-
 p2p core as its own library in its own subrepo
 
 gateway
