@@ -10,8 +10,6 @@ use streams where appropriate
 
 p2p core as its own library in its own subrepo
 
-vterm captures: use low terminal dimensions and render images at half resolution to save bandwidth
-
 gateway
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
   only paragons contact the gateway after signin

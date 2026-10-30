@@ -50,13 +50,15 @@ def render(screen, path):
             cell = screen.buffer[y][x]
             ink = color(cell.bg, '#020202') if cell.reverse else color(cell.fg, '#fafafa')
             draw.text((x*cw, y*ch), cell.data, font=font, fill=ink)
+    image = image.resize((max(1, image.width // 2), max(1, image.height // 2)),
+                         Image.Resampling.LANCZOS)
     image.save(path)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--width', type=int, default=100)
-    parser.add_argument('--height', type=int, default=36)
+    parser.add_argument('--width', type=int, default=80)
+    parser.add_argument('--height', type=int, default=24)
     args = parser.parse_args()
     width, height = args.width, args.height
     screen = pyte.Screen(width, height)

@@ -22,7 +22,7 @@ Each connected sender contributes at most one latest report per entity. Fresh re
 
 Default k is 8/s. The denominator bounds the correction rate as neighbor count or total trust increases. This is not full independence from graph degree: adding genuinely different evidence still changes both target and pull. A local owner resists correction; an incoming owner's observation has greater weight. Finite owner preference mitigates dilution but does not guarantee preservation of all movement. Echoed estimates remain correlated; no provenance consensus or strict ownership authority is claimed.
 
-sync_b stores persistent state with hidden confidence, turning true at 0.6 and false at 0.4. Write with set(), read with .value. It is not reliable one-shot event delivery. Fire toggles this flag. Damage and defender-favoring hit resolution are not implemented; health remains local.
+sync_b stores persistent state with hidden confidence, turning true at 0.6 and false at 0.4. Write with set(), read with .state. It is not reliable one-shot event delivery. Fire toggles this flag. Damage and defender-favoring hit resolution are not implemented; health remains local.
 
 ## Transport boundary and checks
 
