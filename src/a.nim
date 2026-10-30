@@ -104,7 +104,7 @@ proc stepShips(dt = 0.025) =
 
 proc main(): int =
   if not initScreen(): return 1
-  defer: closeScreen()
+  defer: discard tb_shutdown()
 
   initShips()
   when defined(simSockets):

@@ -12,6 +12,8 @@ importc:
   rename "struct_tb_event.type", kind
   "termbox.h"
 
+export tb_shutdown
+
 type
   i2*       = tuple[x, y: int32]
   rgb*      = uint32
@@ -52,8 +54,6 @@ proc initScreen*(): bool =
   discard tb_hide_cursor()
   discard tb_clear()
   true
-
-proc closeScreen*() = discard tb_shutdown() #todo inline
 
 proc screenSize*() =
   sdim = (int32(tb_width()), int32(tb_height()))
