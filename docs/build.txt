@@ -4,8 +4,8 @@ build and inspection
 ├─ make test runs game, sync, hash/map and trust checks without tmux
 ├─ make check builds the client and checks the network/sync modules
 ├─ make multi opens an interactive two-client tmux session
-├─ make build/colors builds the interactive true-color sample
-├─ after changing termbox headers, rebuild Futhark imports with make NIMFLAGS=-d:opirRebuild
+├─ make build/test/colors builds the interactive true-color sample
+├─ after changing termbox headers, rebuild Futhark imports with make fgs=-d:opirRebuild
 ├─ make multi_agentvm runs four PTY clients through a test-only simulated network
 │  ├─ tests/sim_socket.nim schedules delay, jitter and loss
 │  └─ raw terminal output and test state are under build/multi
@@ -13,7 +13,7 @@ build and inspection
    └─ captures are reconstructions; inspect raw terminal output for shaping issues
 
 Build behavior
-├─ NIMFLAGS applies to every compilation target
+├─ fgs supplies extra Nim flags; Termux adds Futhark include paths and opirRebuild
 ├─ game binaries depend on src/*.nim
 └─ build/gateway is the test relay; the identity gateway is still pending
 
