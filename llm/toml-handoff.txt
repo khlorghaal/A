@@ -1,0 +1,8 @@
+TOML replacement remains open.
+  parsetoml 0.7.2 writer does not escape quotes in keys.
+  toml_serialization 0.2.20 round-trip of a trust ID containing é produced
+    \\xE9 and decoded to invalid UTF-8; trustdb_checks failed on reload.
+  Both libraries were installed in the VM for investigation; neither was added
+  as a project dependency. Existing custom parser and writer remain unchanged.
+  Next: find a TOML library whose encoder round-trips escaped Unicode keys,
+    then re-run existing trustdb tests and add a full-spec input case.
