@@ -13,11 +13,11 @@ architecture
 │  └─ packet-independent discrepancies such as ammo still need a severity rule
 └─ current limitations: no restart epochs, schema negotiation or authenticated transport
 
-each test client has its own dbs under $tmpdir/A/testclientN
-test gateway db is peristent under build/gateway/db
-build/client likewise contains build artefacts and its single db
-build/client is used for debug/run, its db is not used for automated tests
-makefile passes client an arg to indicate what db dir to use, obviously with default vals above
+Client database paths
+├─ --db-dir selects the directory; default and make run use build/client/db
+├─ each automated terminal client uses its own $tmpdir/A/testclientN
+├─ interactive multi clients use build/multi/client1/db and client2/db
+└─ the client loads trust data on startup and saves on clean exit; policy integration remains pending
 
 current code
 ├─ src/p2p.nim uses uint64 peer IDs and external authenticated transport hooks

@@ -18,11 +18,7 @@ dbs
 	gateway has db/[ users trust_swarm trust_paragons paragons ], where trust_paragons is trust data from paragons' witness
 
 	test dbs
-		each test client has its own dbs under $tmpdir/A/testclientN
 		test gateway db is peristent under build/gateway/db
-		build/client likewise contains build artefacts and its single db
-		build/client is used for debug/run, its db is not used for automated tests
-		makefile passes client an arg to indicate what db dir to use, obviously with default vals above
 
 
 weight each paragon or swarm report by its reporter's combined credibility

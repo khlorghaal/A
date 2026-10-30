@@ -8,7 +8,7 @@ endif # futhark opir hack
 
 
 run: build/A
-	./build/A
+	./build/A --db-dir build/client/db
 
 game_sources = a.nimble nim.cfg $(wildcard src/*.nim) \
                deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
@@ -27,15 +27,15 @@ build/test/colors: tests/colors.nim $(game_sources)
 # Interactive, two-pane rendering launcher; independent of automated tests.
 multi: build/A
 	@if [ -n "$$TMUX" ]; then \
-		id=$$(tmux new-window -P -F "#{window_id}" -n A-test "A_PEER_ID=1 ./build/A") || exit; \
+		id=$$(tmux new-window -P -F "#{window_id}" -n A-test "A_PEER_ID=1 ./build/A --db-dir build/multi/client1/db") || exit; \
 		    tmux set-option   -w -t "$$id" remain-on-exit off; \
-		    tmux split-window -h -t "$$id" "A_PEER_ID=2 ./build/A" || { \
+		    tmux split-window -h -t "$$id" "A_PEER_ID=2 ./build/A --db-dir build/multi/client2/db" || { \
 			tmux kill-window  -t "$$id"; exit 1; \
 		}; \
 	else \
-		tmux new-session      -d -s A-test   "A_PEER_ID=1 ./build/A" || exit; \
+		tmux new-session      -d -s A-test   "A_PEER_ID=1 ./build/A --db-dir build/multi/client1/db" || exit; \
 		tmux set-option       -w -t A-test:0 remain-on-exit off; \
-		tmux split-window     -h -t A-test:0 "A_PEER_ID=2 ./build/A" || { \
+		tmux split-window     -h -t A-test:0 "A_PEER_ID=2 ./build/A --db-dir build/multi/client2/db" || { \
 			tmux kill-session    -t A-test; exit 1; \
 		}; \
 		tmux attach-session -t A-test; \
@@ -60,8 +60,8 @@ clean:
 	rm -rf build
 
 # Four real PTYs plus deterministic in-process network checks.
-# build/gateway is a test relay, not the future identity gateway.
-multi_agentvm: build/A-multi build/gateway
+# The relay is test-only, not the future identity gateway.
+multi_agentvm: build/A-multi build/gateway/relay
 	nim c $(fgs) -o:build/multi-checks   -r tests/multi_checks.nim
 	nim c $(fgs) -o:build/multi-terminal -r tests/multi_terminal.nim
 
@@ -74,6 +74,7 @@ build/A-multi: tests/socket_gateway.nim tests/sim_socket.nim
 	mkdir -p build
 	nim c $(fgs) -d:simSockets -o:$@ src/a.nim
 
-build/gateway: nim.cfg tests/socket_gateway.nim tests/sim_socket.nim src/p2p.nim
-	mkdir -p build
+build/gateway/relay: nim.cfg tests/socket_gateway.nim tests/sim_socket.nim src/p2p.nim
+	@if [ -f build/gateway ]; then mv build/gateway build/gateway.previous; fi
+	mkdir -p build/gateway
 	nim c $(fgs) -o:$@ tests/socket_gateway.nim

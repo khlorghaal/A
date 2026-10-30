@@ -1,5 +1,12 @@
 import std/unicode
 
+doAssert dbDirectory(@[]) == "build/client/db"
+doAssert dbDirectory(@["--db-dir", "/tmp/custom"]) == "/tmp/custom"
+try:
+  discard dbDirectory(@["--db-dir"])
+  doAssert false
+except ValueError: discard
+
 # Included only with -d:aTests. These checks never initialize the terminal.
 doAssert sizeof(TbEvent) == 24
 doAssert a_init_locale() != 0

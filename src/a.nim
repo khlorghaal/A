@@ -1,5 +1,5 @@
 import std/[monotimes, os, tables, math, strutils]
-import p2p, sync
+import p2p, sync, trustdb
 import client
 when defined(simSockets):
   import ../tests/socket_gateway
@@ -102,8 +102,20 @@ proc stepShips(dt = 0.025) =
     let s = ships[i]
     draw(s.kin.p, Cell(g: s.chr, fg: s.fac, bg: colBaseBg))
 
+proc dbDirectory(args: openArray[string]): string =
+  result = "build/client/db"
+  var i = 0
+  while i < args.len:
+    if args[i] != "--db-dir" or i + 1 >= args.len or args[i+1].len == 0:
+      raise newException(ValueError, "usage: A [--db-dir DIRECTORY]")
+    result = args[i+1]
+    i += 2
+
 proc main(): int =
+  let dbDir = dbDirectory(commandLineParams())
+  var db = trustdb.load(dbDir)
   if not initScreen(): return 1
+  defer: db.save(dbDir)
   defer: discard tb_shutdown()
 
   initShips()

@@ -11,7 +11,7 @@ import multi_observations
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-static int a_start_pty(int *master, int peer, int port, const char *state) {
+static int a_start_pty(int *master, int peer, int port, const char *state, const char *db) {
   struct winsize size = {30, 80, 0, 0};
   int pid = forkpty(master, NULL, NULL, &size);
   if (pid == 0) {
@@ -24,14 +24,14 @@ static int a_start_pty(int *master, int peer, int port, const char *state) {
     setenv("A_GATEWAY_PORT", gateway, 1);
     setenv("A_STATE_FILE", state, 1);
     setenv("A_TEST_VX", "4", 1);
-    execl("./build/A-multi", "A-multi", (char *)NULL);
+    execl("./build/A-multi", "A-multi", "--db-dir", db, (char *)NULL);
     _exit(127);
   }
   if (pid > 0) fcntl(*master, F_SETFL, fcntl(*master, F_GETFL) | O_NONBLOCK);
   return pid;
 }
 """.}
-proc startPty(master: ptr cint, peer, port: cint, state: cstring): cint
+proc startPty(master: ptr cint, peer, port: cint, state, db: cstring): cint
   {.importc: "a_start_pty", nodecl.}
 
 type Child = object
@@ -40,6 +40,8 @@ type Child = object
   output: string
   reaped: bool
   status: cint
+
+let tmpDir = getTempDir() / ("a-multi-" & $getCurrentProcessId())
 
 proc running(child: var Child): bool =
   if child.reaped: return false
@@ -78,15 +80,16 @@ proc scenario(latency, jitter: int, loss: float64, crash = false) =
   probe.bindAddr(Port(0), "127.0.0.1")
   let port = probe.getLocalAddr()[1]
   probe.close()
-  let gateway = startProcess("./build/gateway", args = @[$int(port), $latency, $jitter, $loss],
+  let gateway = startProcess("./build/gateway/relay", args = @[$int(port), $latency, $jitter, $loss],
                              options = {poUsePath, poStdErrToStdOut})
   var children: seq[Child]
   try:
     doAssert gateway.outputStream.readLine() == "ready", "gateway failed to start"
     for i in 0..<4:
       let state = outDir / ("state-" & $i)
+      let db = tmpDir / "A" / ("testclient" & $(i+1))
       var c: Child
-      c.pid = Pid(startPty(addr c.fd, cint(i+1), cint(port), state.cstring))
+      c.pid = Pid(startPty(addr c.fd, cint(i+1), cint(port), state.cstring, db.cstring))
       doAssert c.pid > 0, "forkpty failed"
       children.add c
     pump(children, gateway, 1)
@@ -128,6 +131,8 @@ proc scenario(latency, jitter: int, loss: float64, crash = false) =
         sleep(20)
       doAssert c.reaped, "client exit timeout"
       doAssert WIFEXITED(c.status) and WEXITSTATUS(c.status) == 0, "unclean client exit"
+    for i in 1..4:
+      doAssert fileExists(tmpDir / "A" / ("testclient" & $i) / "trust_witnessed.toml")
     echo "4 clients: latency=", latency, " jitter=", jitter, " loss=", loss, ": passed"
   finally:
     for c in children.mitems:
@@ -142,7 +147,10 @@ proc scenario(latency, jitter: int, loss: float64, crash = false) =
       discard gateway.waitForExit()
     gateway.close()
 
-scenario(0, 0, 0)
-scenario(80, 35, 0.25)
-scenario(80, 35, 0.25, true)
-echo "four-client TUI network tests passed; all child processes reaped"
+try:
+  scenario(0, 0, 0)
+  scenario(80, 35, 0.25)
+  scenario(80, 35, 0.25, true)
+  echo "four-client TUI network tests passed; all child processes reaped"
+finally:
+  if dirExists(tmpDir): removeDir(tmpDir)
