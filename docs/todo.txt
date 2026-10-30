@@ -35,6 +35,8 @@ owner control
 
 defer>>>
 
+Futhark PR: detect Termux system headers for opir
+
 auth
   auth and gateway as the same server
   gateway authoritates peer identities and session tokens
