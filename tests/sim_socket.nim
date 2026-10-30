@@ -37,7 +37,7 @@ proc recv*(g: var Gateway, dst: PeerId): seq[Event] =
   for f in g.flights:
     if f.dst == dst and f.at <= g.now:
       var e = f.event
-      e.datum.age += float64(g.now - f.sent)/1000
+      e.datum.age += seconds(Milliseconds(g.now - f.sent))
       result.add e
     else: pending.add f
   g.flights = pending

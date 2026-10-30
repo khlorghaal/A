@@ -7,6 +7,8 @@ type
 
 func `<`*(a, b: Milliseconds): bool {.borrow.}
 func `==`*(a, b: Milliseconds): bool {.borrow.}
+func `+`*(a, b: Seconds): Seconds {.borrow.}
+proc `+=`*(a: var Seconds, b: Seconds) = a = a + b
 
 func seconds*(ms: Milliseconds): Seconds =
   Seconds(float64(int64(ms)) / 1000)

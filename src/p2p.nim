@@ -23,7 +23,7 @@ type
   Datum* = object
     key*, revision*: uint64
     bytes*: seq[byte]
-    age*  : float64 # sample age at receipt, seconds; supplied by transport
+    age*  : Seconds # sample age at receipt; supplied by transport
   Receipt* = tuple[source: PeerId, datum: Datum]
 
   KindId* = uint16
@@ -176,7 +176,7 @@ proc tick*(n: var Net, dt = 0.0) =
   # Age existing outgoing rows; pass zero when they were just published.
   doAssert dt >= 0 and classify(dt) notin {fcNan, fcInf, fcNegInf}
   for k in n.kinds.values:
-    for d in k.row.mitems: d.age += dt
+    for d in k.row.mitems: d.age += Seconds(dt)
 
   n.receive()
   for p in n.all: traffic(p)

@@ -92,7 +92,7 @@ proc kineticRun(count: int, compensate: bool): float32 =
   gather = proc(): seq[Event] =
     result = g.recv(active)
     if not compensate:
-      for e in result.mitems: e.datum.age = 0
+      for e in result.mitems: e.datum.age = Seconds(0)
   sendDatum = proc(p: Peer, k: Kind, d: Datum) =
     g.send(p.info.id, Event(event: data, source: PeerInfo(id: active),
                             kind: k.id, datum: d))

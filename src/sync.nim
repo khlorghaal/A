@@ -132,7 +132,7 @@ proc publish*[T](s: var Sync, entities: openArray[T]) =
 proc ingest[T](s: var Sync, entities: openArray[T]) =
   for receipt in s.kind.queue:
     let d = receipt.datum
-    if not finite(d.age) or d.age < 0: continue
+    if not finite(float64(d.age)) or float64(d.age) < 0: continue
 
     var incoming: T
     try: decode(d.bytes, incoming)
@@ -145,7 +145,8 @@ proc ingest[T](s: var Sync, entities: openArray[T]) =
     if index in s.reports and d.revision <= s.reports[index].revision:
       continue
 
-    s.reports[index] = Report(revision: d.revision, time: s.time, age: d.age, bytes: d.bytes)
+    s.reports[index] = Report(revision: d.revision, time: s.time,
+                              age: float64(d.age), bytes: d.bytes)
   s.kind.queue.setLen(0)
 
 func toward(a, b, alpha: float32): float32 =
