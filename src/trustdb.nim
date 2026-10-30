@@ -78,9 +78,12 @@ proc readDb(path: string): Table[string, float32] =
   try: root = Toml_v100.decode(readFile(path), TomlValueRef)
   except TomlError as e: raise newException(ValueError, "invalid trust TOML: " & e.msg)
   if root.kind != TomlKind.Table or root.tableVal.len != 1 or
-     "trust" notin root.tableVal or root.tableVal["trust"].kind notin {TomlKind.Table, TomlKind.InlineTable}:
+     "trust" notin root.tableVal:
     raise newException(ValueError, "invalid trust TOML: " & path)
-  for id, node in root.tableVal["trust"].tableVal:
+  let trust = root.tableVal["trust"]
+  if trust.kind notin {TomlKind.Table, TomlKind.InlineTable}:
+    raise newException(ValueError, "invalid trust TOML: " & path)
+  for id, node in trust.tableVal:
     let value = case node.kind
       of TomlKind.Float: float32(node.floatVal)
       of TomlKind.Int:   float32(node.intVal)
@@ -97,7 +100,8 @@ proc writeDb(path: string, values: Table[string, float32]) =
     let normalized = checkedId(id, value)
     if normalized in trust.tableVal:
       raise newException(ValueError, "duplicate normalized player ID in " & path)
-    trust.tableVal[normalized] = TomlValueRef(kind: TomlKind.Float, floatVal: value.float64)
+    trust.tableVal[normalized] = TomlValueRef(kind: TomlKind.Float,
+                                             floatVal: value.float64)
   # The library emits non-TOML 1.0 escapes for ESC and apostrophe.
   let encoded = Toml_v100.encode(root)
   var data = ""
