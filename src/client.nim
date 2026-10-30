@@ -26,7 +26,7 @@ func   `+`*(a, b: i2): i2          = (a.x + b.x, a.y + b.y)
 func   `-`*(a, b: i2): i2          = (a.x - b.x, a.y - b.y)
 func `div`*(a: i2, b: int32): i2 = (a.x div b, a.y div b)
 proc `+=`*(a: var i2, b: i2) = a = a + b
-func    v*(x, y: int32): i2 = (x, y)#? rept why?? whats * is significanted?
+func    v*(x, y: int32): i2 = (x, y) # * exports this tuple constructor
 
 func isBound*(v, a, b: i2): bool =
   v.x >= a.x and v.x < b.x and

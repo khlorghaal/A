@@ -30,10 +30,10 @@ func combined*(witnessed, paragon, swarm: float32): float32 =
 
 func reliability*(pingMs: float32): float32 =
   const points = [
-    ( 30'f32, 1.00'f32),#? elucidate matrix vals
-    ( 80'f32, 0.80'f32),# here  ,like this
-    (150'f32, 0.50'f32),# is how, i comment mats
-    (400'f32, 0.05'f32)]# note
+    ( 30'f32, 1.00'f32),# latency ms, heuristic reliability at that latency
+    ( 80'f32, 0.80'f32),# between points: linear interpolation
+    (150'f32, 0.50'f32),# below first: reliability 1
+    (400'f32, 0.05'f32)]# above last: reliability .05
   if pingMs <= points[0][0]: return points[0][1]
   for i in 1..<points.len:
     let (x1, y1) = points[i]

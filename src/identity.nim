@@ -2,7 +2,7 @@
 import std/unicode
 
 const canonicalCompose = 1.cint # GLib G_NORMALIZE_DEFAULT_COMPOSE (NFC)
-#? comment what is "g"
+# g_ is the GLib C API prefix.
 proc gUtf8Normalize(str: cstring, len: int, mode: cint): cstring
   {.cdecl, importc: "g_utf8_normalize", dynlib: "libglib-2.0.so.0".}
 proc gFree(mem: pointer) {.cdecl, importc: "g_free", dynlib: "libglib-2.0.so.0".}

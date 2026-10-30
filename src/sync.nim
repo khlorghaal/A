@@ -13,7 +13,7 @@ type
   sync_v2* = tuple[x, y: float32]
   sync_k2* = object
     p*, v*: sync_v2 # position, velocity
-  sync_b*  = object #? explain _b ctx
+  sync_b*  = object # boolean state with confidence and hysteresis
     state     : bool
     confidence: float32
 
@@ -44,7 +44,7 @@ proc set*(x: var sync_b, value: bool) =
 func value*(x: sync_b): bool = x.state
 #fixme this is retarded, report: why is this an accessor? is it being used by some polymorph??
 
-func  sv*(x, y: float32): sync_v2 = (x, y) #? report again why this trivial func
+func  sv*(x, y: float32): sync_v2 = (x, y) # tuple constructor
 func `+`*(a, b: sync_v2): sync_v2 = sv(a.x + b.x, a.y + b.y)
 proc `+=`*(a: var sync_v2, b: sync_v2) = a = a + b
 
@@ -152,8 +152,8 @@ proc ingest[T](s: var Sync, entities: openArray[T]) =
   s.kind.queue.setLen(0)
 
 func toward(a, b, alpha: float32): float32 =
+  # Interpolate toward the target; blend uses this for rubber-band correction.
   float32(float64(a)*(1 - float64(alpha)) + float64(b)*float64(alpha))
-  #? explain toward pls. is it the rubberband? if so name it that
 
 proc blend[T](entity: var T, target: T, alpha: float32) =
   for _, a, b in fieldPairs(entity, target):
@@ -184,7 +184,6 @@ iterator influences(s: Sync, n: Net, entity: Uid): Influence =
     let w = float64(s.weight(index.source, entity, trust))
     if w > 0: yield (report.bytes, w, age)
 
-#? overview. comment in body.
 proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
                    dt: float64, selfTrust = 0'f32) =
   doAssert dt >= 0 and finite(dt)
@@ -193,6 +192,7 @@ proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
   s.time += dt
   s.ingest(entities)
 
+  # Build a weighted target from fresh peer reports, then ease local state to it.
   for entity in entities.mitems:
     var target = entity
     var total = 0.0
