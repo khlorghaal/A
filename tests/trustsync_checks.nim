@@ -54,6 +54,35 @@ rx.receive(right)
 rx.kind.queue.add (1'u64, first)
 rx.receive(right)
 doAssert abs(rightDb[].swarm[("alice", "bob🙂")] - 0.2) < 0.00001
+
+block malformedReports:
+  let malformed = [
+    "{",
+    "{\"subject\":\"bob🙂\",\"credibility\":-0.1}",
+    "{\"subject\":\"bob🙂\",\"credibility\":1.1}",
+    "{\"subject\":\"wrong\",\"credibility\":0.9}",
+    "{\"subject\":\"\\u0000\",\"credibility\":0.9}"]
+  for raw in malformed:
+    var d = first
+    d.revision = high(uint64)
+    d.bytes = @[]
+    for c in raw: d.bytes.add byte(c)
+    rx.kind.queue.add (1'u64, d)
+  var oversized = first
+  oversized.revision = high(uint64)
+  oversized.bytes = newSeq[byte](16_385)
+  rx.kind.queue.add (1'u64, oversized)
+  rx.kind.queue.add (999'u64, first)
+  rx.receive(right)
+  doAssert rx.kind.queue.len == 0
+  doAssert abs(rightDb[].swarm[("alice", "bob🙂")] - 0.2) < 0.00001
+
+  leftDb[].setWitness("bob🙂", 0.6)
+  tx.publish()
+  rx.kind.queue.add (1'u64, tx.kind.row[0])
+  rx.receive(right)
+  doAssert abs(rightDb[].swarm[("alice", "bob🙂")] - 0.6) < 0.00001
+
 rx.attachPositionPolicy(right)
 doAssert right.positionTrust(Peer(info: PeerInfo(id: 3), ping: Milliseconds(-1)), 0) == 0
 right.reportDesync(1, 1)
