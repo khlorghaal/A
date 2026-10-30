@@ -1,6 +1,6 @@
 blastd extraction
-  local repository: /workspace/blastd, commit 226604d
-  src/blastd.nim matches A's src/p2p.nim; units.nim is copied; Nim check passed
+  local repository: /workspace/blastd, commit 9fe035b
+  src/blastd.nim matches A's src/p2p.nim; units and saturation are copied; Nim check passed
   A still imports its original core; extraction is incomplete
   a shareable Git remote is needed before a portable submodule can be linked
   preserve separate-library goal; do not commit a VM-only file URL to A
