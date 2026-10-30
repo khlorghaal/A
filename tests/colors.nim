@@ -19,7 +19,10 @@ proc main(): int =
     (0x654321'u32, 0x123456'u32, "custom")]
 
   for i, (fg, bg, label) in rows:
-    discard tb_print(1, int32(i+1), fg, bg, label.cstring)
+    when compiles(tb_print(1, int32(i+1), fg, bg, label.cstring)):
+      discard tb_print(1, int32(i+1), fg, bg, label.cstring)
+    else:
+      discard tb_print(1, int32(i+1), fg, bg, cast[ptr uint8](label.cstring))
 
   discard tb_present()
   var event: TbEvent

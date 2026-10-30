@@ -63,7 +63,10 @@ proc presentScreen*() =
   discard tb_clear()
 
 proc debugHeader*(text: string) =
-  discard tb_print(0, 0, colDbgFg, colDbgBg, text.cstring)
+  when compiles(tb_print(0, 0, colDbgFg, colDbgBg, text.cstring)):
+    discard tb_print(0, 0, colDbgFg, colDbgBg, text.cstring)
+  else:
+    discard tb_print(0, 0, colDbgFg, colDbgBg, cast[ptr uint8](text.cstring))
 
 proc draw*(m: sync_v2, c: Cell) =
   let x = m.x - view.x + float32(sdim.x div 2)
@@ -97,8 +100,10 @@ proc drawPad*(mouse: i2, act: proc(a: Action)) =
   const wh: i2 = (int32(pad[0].runeLen), int32(pad.len div 2))
   let origin = sdim - wh - v(3, 3)
   for y in 0..<wh.y:
-    discard tb_print(origin.x, origin.y + y,
-                     colDpadFg, colDpadBg, pad[y*2].cstring)
+    when compiles(tb_print(origin.x, origin.y + y, colDpadFg, colDpadBg, pad[y*2].cstring)):
+      discard tb_print(origin.x, origin.y + y, colDpadFg, colDpadBg, pad[y*2].cstring)
+    else:
+      discard tb_print(origin.x, origin.y + y, colDpadFg, colDpadBg, cast[ptr uint8](pad[y*2].cstring))
 
   let p = mouse - origin
   if not isBound(p, v(0, 0), wh): return
