@@ -1,6 +1,7 @@
 blastd extraction
-  local repository: /workspace/blastd, commit 8036f24
-  src/blastd.nim matches A's src/p2p.nim; units and saturation are copied; Nim check passed
+  local repository: /workspace/blastd, commit f60ba96; bundle: /workspace/blastd.bundle
+  src/blastd.nim matches A's src/p2p.nim; units and saturation are copied
+  nimble test passes standalone core checks
   A still imports its original core; extraction is incomplete
   a shareable Git remote is needed before a portable submodule can be linked
   preserve separate-library goal; do not commit a VM-only file URL to A
