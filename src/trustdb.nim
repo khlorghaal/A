@@ -75,7 +75,7 @@ proc advance*(db: var TrustDb, dt: float32) =
 proc readDb(path: string): Table[string, float32] =
   if not fileExists(path): return
   var root: TomlValueRef
-  try: root = Toml_v100.decode(readFile(path), TomlValueRef)
+  try: root = Toml_v100.loadFile(path, TomlValueRef)
   except TomlError as e: raise newException(ValueError, "invalid trust TOML: " & e.msg)
   if root.kind != TomlKind.Table or root.tableVal.len != 1 or
      "trust" notin root.tableVal:
