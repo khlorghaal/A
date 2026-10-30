@@ -7,6 +7,7 @@ points here; no cloud skill sources are modified by this local synchronization.
 - `do`: autonomous authorized work, commits, visual review, tests and handoffs; `burn` strengthens continuation.
 - `cman`: compressed responses, with manual and topic-based activation.
 - `paste`: a single copyable command unless further context is essential.
+- `report`: explain requested reports in the current chat.
 - `todo`: active/deferred queue semantics and removal of verified completed items.
 - `visual-annealing`: repeated narrow and broad inspection of rendered code.
 - `pqt`: pause execution until the user explicitly authorizes resumption.

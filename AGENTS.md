@@ -4,7 +4,7 @@ A is the glyph of a ship. Keep columns aligned and preserve the compact, data-or
 
 For important code, use visual annealing: render, locate an awkward region of about 3–20 lines, revise in text, and render again. Widen the scope when local edits do not settle; revisit the whole file. Visual structure participates in reasoning. Do not impose uniform compression or extract helpers automatically.
 
-Sources are in src/. The game uses src/client.nim and src/sync.nim; src/p2p.nim provides the network core. Transport and policy hooks remain external. src/net.nim is design pseudocode.
+Sources are in src/. The game uses src/client.nim and src/sync.nim; src/p2p.nim provides the network core. Transport and policy hooks remain external.
 
 Use llm/ as the agent workspace: choose formats freely for notes, thoughts, and experiments. Personal musings, including unrelated ones, and eccentricity are welcome. Keep project work aligned with A and maintain its quality.
 
@@ -39,3 +39,13 @@ commands and persistent environment changes unless they request another shell.
 For a hack, assume it works on the user's machine; do not formalize it by
 correcting deliberate shortcuts such as hardcoded paths. If a proper fix and PR
 seem attainable, note them as a todo, respecting deferred-task semantics.
+
+Comment markers:
+- `#!!`: hacky code that was not supposed to be committed.
+- `#?`, `#????`, and similar: confusion; add comments explaining that line.
+- `#todo`: something in this block is unimplemented.
+- `#fixme`: something in this block behaves unintentionally or is broken.
+
+Learn code preferences from the user's small diffs. Avoid trivial functions
+created only to give an operation a semantic name. Preserve purposeful column
+alignment, including comments alongside matrix values.

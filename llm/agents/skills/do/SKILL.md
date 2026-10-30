@@ -19,6 +19,12 @@ An explicit user instruction can promote a specific deferred task; otherwise
 do not implement, research, plan or otherwise work on it. Explicitly deferred
 items above the boundary are also excluded.
 
+Scan project comments with `rg '#!!|#\?+|#todo|#fixme'` for the markers
+defined in AGENTS.md. Treat them as leads for active work, and leave deferred
+work untouched. Explain lines marked with questions when their meaning is clear.
+Inspect only a small surrounding section (about 10 lines either side) unless
+more context is needed; use other resource-saving methods when useful.
+
 1. Briefly skim the active work and identify genuinely blocking questions. Ask
    only for material blockers; record real blockers without inventing policy.
 2. Divide work into independently meaningful Git commits. Commit a coherent,

@@ -1,10 +1,16 @@
 need a maybe type for hmap and generally
 
+replace remaining trust `unit` calls with `sat`
+
 units like seconds miliseconds should be strongly typed and convert apprpropriately
 
 scrap the custom toml impl, just use toml
 
 sanitize any db inputs
+
+use streams where appropriate
+
+vterm captures: use low terminal dimensions and render images at half resolution to save bandwidth
 
 gateway
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
@@ -39,6 +45,8 @@ owner control
 
 
 defer>>>
+
+vterm capture: represent motion appropriately, perhaps with a diff or B-frames, whichever is easier
 
 Futhark PR: detect Termux system headers for opir
 
