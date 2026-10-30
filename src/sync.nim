@@ -5,8 +5,6 @@ import p2p
 # agents+= do not make trivial functions for semantics
 #todo agents += make heavy use of noting my code preferences. look at my smaller diffs for learning style cues, mem note them and note in agents
 
-#todo replace `value` with v for number like, x for scalar, i for ints, s symbol
-# document^
 type
   Uid*     = tuple[h, l: uint64]
   sync_f*  = distinct float32

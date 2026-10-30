@@ -57,3 +57,5 @@ Comment markers:
 Learn code preferences from the user's small diffs. Avoid trivial functions
 created only to give an operation a semantic name. Preserve purposeful column
 alignment, including comments alongside matrix values.
+For compact local names, use `v` for number-like values, `x` for scalars,
+`i` for integers and `s` for symbols when the context is clear.
