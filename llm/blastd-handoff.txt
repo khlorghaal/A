@@ -1,5 +1,5 @@
 blastd extraction
-  local repository: /workspace/blastd, commit 734986f; bundle: /workspace/blastd.bundle
+  local repository: /workspace/blastd, commit 2def2aa; bundle: /workspace/blastd.bundle
   src/blastd.nim matches A's src/p2p.nim; units and saturation are copied
   nimble test passes standalone core checks
   A still imports its original core; extraction is incomplete
