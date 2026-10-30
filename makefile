@@ -1,7 +1,7 @@
 .PHONY: run multi multi_agentvm owner_measurements check test clean
 
 ifneq ($(TERMUX_VERSION),)
-  fgs += -d:opirRebuild -d:syspaths=$(PREFIX)/include:$(PREFIX)/lib/clang/latest/include:$(PREFIX)/include/aarch64-linux-android
+  override fgs += -d:opirRebuild -d:syspaths=$(PREFIX)/include:$(PREFIX)/lib/clang/latest/include:$(PREFIX)/include/aarch64-linux-android
 endif # futhark opir hack
 
 #fgs += flags
