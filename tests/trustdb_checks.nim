@@ -89,6 +89,23 @@ doAssert "subject" in load(dir).witnessed
 db.refresh()
 db.refresh()
 doAssert abs(db.credibility(composed) - 0.6) < 0.00001
+var poisoned: TrustDb
+poisoned.setWitness("reporter", 0.5)
+poisoned.refresh()
+let previous = poisoned.credibility("reporter")
+poisoned.swarm[("reporter", "subject")] = Inf.float32
+try:
+  poisoned.refresh()
+  doAssert false
+except ValueError: discard
+doAssert poisoned.credibility("reporter") == previous
+poisoned.swarm.clear()
+poisoned.witnessed[decomposed] = 0.5
+try:
+  poisoned.refresh()
+  doAssert false
+except ValueError: discard
+
 db.setSwarm("alice", composed, 1)
 db.refresh()
 doAssert abs(db.credibility(composed) - 0.68) < 0.00001

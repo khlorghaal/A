@@ -34,15 +34,22 @@ proc credibility*(db: TrustDb, subject: string): float32 =
 proc refresh*(db: var TrustDb) =
   ## One simultaneous step uses the previous combined scores for reporters.
   var subjects: HashSet[string]
-  for id in db.witnessed.keys: subjects.incl id
-  for id in db.paragon.keys: subjects.incl id
-  for edge in db.swarm.keys:
+  for id, v in db.witnessed:
+    if checkedId(id, v) != id: raise newException(ValueError, "noncanonical player ID")
+    subjects.incl id
+  for id, v in db.paragon:
+    if checkedId(id, v) != id: raise newException(ValueError, "noncanonical player ID")
+    subjects.incl id
+  for edge, v in db.swarm:
+    if checkedId(edge.reporter, v) != edge.reporter or
+       playerId(edge.subject) != edge.subject:
+      raise newException(ValueError, "noncanonical player ID")
     subjects.incl edge.reporter
     subjects.incl edge.subject
   var totals: Table[string, tuple[sum: float32, count: int]]
-  for edge, value in db.swarm:
+  for edge, v in db.swarm:
     totals.mgetOrPut(edge.subject, (0'f32, 0)).sum +=
-      db.scores.getOrDefault(edge.reporter) * value
+      db.scores.getOrDefault(edge.reporter) * v
     inc totals[edge.subject].count
   var next: Table[string, float32]
   for subject in subjects:

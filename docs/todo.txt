@@ -1,7 +1,5 @@
 units like seconds miliseconds should be strongly typed and convert apprpropriately
 
-sanitize any db inputs
-
 p2p core as its own library in its own subrepo
 
 gateway

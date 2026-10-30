@@ -30,6 +30,9 @@ Trust persistence
 ├─ toml_serialization reads through a file input stream and writes TOML 1.0; IDs are normalized and validated
 └─ trust_witnessed.toml persists both witnessed credibility and discredit; legacy trust-only files remain readable
 
+Trust inputs
+└─ setters normalize IDs and validate scores; refresh rejects invalid or noncanonical direct table writes
+
 synchronization details
 ├─ each kinetic record pairs position and velocity; no acceleration or intent prediction
 ├─ sender-row, transport and cached time contribute to sample age
