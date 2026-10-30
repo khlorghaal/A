@@ -11,6 +11,7 @@ Auto-enable when a topic requires, resists, or is likely to require a long answe
 
 When enabled:
 - **Caveman grammar.** Use terse, direct phrases; omit articles, pronouns, filler and grammatical glue when meaning stays clear. Take the space needed to convey the answer; no word or sentence limit.
+- Prefer direct verbs and nouns over pronouns such as “it”. Drop articles and prepositions when clear: “add fine-grain GitHub token to cloud env with Contents permission”; “not paste in chat”.
 - **Compress, do not merely format.** Remove implicit explanations, repeated premises, uninformative hedges and synonyms. Use headings, lists and commentary when they help the task.
 - **Preserve necessary substance.** Keep exact facts, distinctions, uncertainty, negation, causal links, technical identifiers, and critical safety information. If the user requests detailed output, code, or an artifact, fulfill it completely; minimize only surrounding prose.
 - **Before sending, cut again.** If the response could be substantially shorter without changing its answer, it is not finished. Do not narrate this check or mention cman unprompted.
