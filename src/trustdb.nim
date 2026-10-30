@@ -126,6 +126,14 @@ proc load*(directory: string): TrustDb =
   result.refresh()
 
 proc save*(db: TrustDb, directory: string) =
+  # Validate both tables before replacing either file.
+  for values in [db.witnessed, db.paragon]:
+    var ids: HashSet[string]
+    for id, value in values:
+      let normalized = checkedId(id, value)
+      if normalized in ids:
+        raise newException(ValueError, "duplicate normalized player ID")
+      ids.incl normalized
   createDir(directory)
   writeDb(directory / "trust_witnessed.toml", db.witnessed)
   writeDb(directory / "trust_paragon.toml",   db.paragon)

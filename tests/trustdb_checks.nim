@@ -47,6 +47,15 @@ try:
 except ValueError: discard
 doAssert abs(load(dir).witnessed[composed] - 0.3) < 0.00001
 
+var invalid: TrustDb
+invalid.witnessed["would-replace"] = 0.9
+invalid.paragon["invalid"] = NaN.float32
+try:
+  invalid.save(dir)
+  doAssert false
+except ValueError: discard
+doAssert abs(load(dir).witnessed[composed] - 0.3) < 0.00001
+
 writeFile(dir / "trust_witnessed.toml", "[trust]\nalice = 0.5 # standard TOML comment\n")
 doAssert abs(load(dir).witnessed["alice"] - 0.5) < 0.00001
 
