@@ -1,69 +1,44 @@
 # A
 
-A is the glyph of a ship. Keep columns aligned and preserve the compact, data-oriented notation.
+## Index
 
-For important code, use visual annealing: render, locate an awkward region of about 3–20 lines, revise in text, and render again. Widen the scope when local edits do not settle; revisit the whole file. Visual structure participates in reasoning. Do not impose uniform compression or extract helpers automatically.
+- Rules: `~/.codex/AGENTS.md`; repo exceptions: repo `AGENTS.md`.
+- Skills: `/workspace/agent-state/skills/README.md`; todo: repo `docs/todo.txt`.
+- Memory: `~/.optmem/memo`; shared notes: `/workspace/agent-state/notes/`.
 
-Sources are in src/. The game uses src/client.nim and src/sync.nim; src/p2p.nim provides the network core. Transport and policy hooks remain external.
+A is the glyph of a ship. `src/`: game `client.nim`/`sync.nim`, network core
+`p2p.nim`; transport/policy external. `tests/` checks; `docs/` design/todo;
+`llm/` project notes. Shared skills/personal notes: `/workspace/agent-state`.
 
-Use nimsuggest for Nim-aware outlines, definitions and references when useful;
-the VM copy is at /workspace/toolchains/nim-2.4.0/bin/nimsuggest. Use rg for
-simple text searches. Incomplete or broken code may limit semantic results.
+Keep compact data-oriented layout and aligned columns. For important code,
+visual anneal: render, revise ~3–20 lines, render again; widen if needed, revisit
+whole file. Do not impose uniform compression or extract trivial wrappers.
+Use nimsuggest for Nim outlines/references when useful: VM copy
+`/workspace/toolchains/nim-2.4.0/bin/nimsuggest`; use rg for simple searches.
 
-Use llm/ for project-specific notes and experiments. Shared workflows and personal musings belong in /workspace/agent-state. Keep project work aligned with A.
+Docs: human-readable, topical tree notation, descending priority; types and
+algorithms under architecture. Keep generated builds/captures and uploaded
+references out of Git. Todo: `docs/todo.txt`; active view via
+`/workspace/agent-state/tools/todo.nim`; `llm/todo.txt` points there. Follow
+shared `skills/todo` and `skills/do`. Order = priority, not dependency. Continue
+independent work around blockers; honor explicit sequencing and fallback.
+Standalone `defer>>>` / `Deferred>>>` defers every later line regardless of
+heading or indentation; explicit deferred entries before marker also deferred.
+No deferred research/planning/implementation until user reopens or authorizes
+fallback. Authentication, gateway login, credentials and peer identity deferred.
+Concise todos: no redundant implement prefix; remove verified completions and
+move durable facts to docs. Checkpoint before large refactors; commit reviewed
+segments. Codex author/committer: Codex <codex@users.noreply.github.com>.
 
-Keep docs/ human-readable, presentable, and organized by topic (for example, network.txt, gameplay.txt, architecture.txt). Write entries in tree notation, sorted by descending priority. Put types and algorithms under architecture. Keep uploaded reference images and generated builds or captures out of Git.
+LF text. User uses fish, including Termux: give fish commands unless requested
+otherwise. Hacks: assume works on user machine; do not formalize shortcuts;
+note attainable proper fix/PR as todo, respecting defer. Preserve purposeful
+alignment, including matrix-adjacent comments. Compact locals: v number-like,
+x scalar, i integer, s symbol when clear. Learn preferences from user diffs.
 
-Use visual-review iterations in proportion to the remaining token budget; reserve enough for tests, fixes, and reporting. See /workspace/agent-state/reference/style.md for observations from doot.
-
-Todo workflow: docs/todo.txt is authoritative; llm/todo.txt is only a pointer.
-Follow /workspace/agent-state/skills/todo/SKILL.md and /workspace/agent-state/skills/do/SKILL.md for local
-refinements to the cloud skills. Todo order expresses priority; tasks may be
-done in any order. Only actual dependencies and explicit sequencing constrain
-execution. A blocked item does not block unrelated work. For multi-part
-checklists, /workspace/agent-state/skills/ordered-checklist/SKILL.md applies the same rule.
-A standalone defer>>> or Deferred>>> marker
-(case-insensitive) defers every subsequent line, regardless of headings or
-indentation. Do not execute explicitly deferred entries above the marker either. Deferred
-means leave the task for later: do not implement, research, plan or otherwise
-work on it until the user explicitly brings it back into scope. Authentication
-is deferred, including gateway login, credentials and authenticated peer identity.
-Use concise task phrases without redundant "implement" prefixes. Remove verified
-completed entries and move enduring details into docs when warranted. Commit
-reviewed checkpoints before large refactors and changes, and completed segments
-with their relevant verification.
-
-For Codex-authored Git commits, use author and committer name Codex and email
-codex@users.noreply.github.com. Preserve other authors' attribution when
-replaying their work.
-
-Project agent skills live under /workspace/agent-state/skills/, not .agents/.
-
-Use LF line endings for project text files; the user does not want CRLF.
-
-The user uses the fish shell (including on Termux). Give fish syntax for shell
-commands and persistent environment changes unless they request another shell.
-
-For a hack, assume it works on the user's machine; do not formalize it by
-correcting deliberate shortcuts such as hardcoded paths. If a proper fix and PR
-seem attainable, note them as a todo, respecting deferred-task semantics.
-
-Comment markers:
-- `#!!`: hacky code that was not supposed to be committed.
-- `#?`, `#????`, and similar: confusion; add comments explaining that line.
-- `#todo`: something in this block is unimplemented.
-- `#fixme`: something in this block behaves unintentionally or is broken.
-
-Learn code preferences from the user's small diffs. Avoid trivial functions
-created only to give an operation a semantic name. Preserve purposeful column
-alignment, including comments alongside matrix values.
-For compact local names, use `v` for number-like values, `x` for scalars,
-`i` for integers and `s` for symbols when the context is clear.
-
-Vacation and dream guidance lives in `/workspace/agent-state/skills/vacation/SKILL.md` and
-`/workspace/agent-state/skills/dream/SKILL.md`; use their increased shared detour allowance.
-
-Shared skills and personal agent state belong in `/workspace/agent-state`, not
-in this repository. Resolve `AGENT_STATE_ROOT` there by default. Read VM-local
-`~/.codex/AGENTS.md` for personal preferences; retain project-specific exceptions
-here. Route new reusable skills to the shared repo, not `llm/agents/skills/`.
+Comment tags: `#!!` uncommitted hack; `#?`/`#????` confusion, explain line;
+`#todo` unimplemented block; `#fixme` unintended or broken behavior.
+Preserve quotes verbatim. Shared vacations/dreams: `skills/vacation`,
+`skills/dream`; use increased allowance. Project-specific exceptions stay here;
+reusable skills and personal notes route to shared repo. Prefer VM-local rules
+for personal preferences; user instructions win.
