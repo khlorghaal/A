@@ -1,5 +1,5 @@
 Project queue: docs/todo.txt
-├─ active view: nim r llm/todo.nim docs/todo.txt
+├─ active view: nim r /workspace/agent-state/tools/todo.nim docs/todo.txt
 ├─ defer>>> / Deferred>>> defers every subsequent line
 ├─ explicitly deferred entries are excluded even above that marker
-└─ workflow: llm/agents/skills/{todo,do}/SKILL.md; completed details belong in docs
+└─ workflow: /workspace/agent-state/skills/{todo,do}/SKILL.md; completed details belong in docs

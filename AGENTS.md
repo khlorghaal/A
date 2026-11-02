@@ -10,18 +10,18 @@ Use nimsuggest for Nim-aware outlines, definitions and references when useful;
 the VM copy is at /workspace/toolchains/nim-2.4.0/bin/nimsuggest. Use rg for
 simple text searches. Incomplete or broken code may limit semantic results.
 
-Use llm/ as the agent workspace: choose formats freely for notes, thoughts, and experiments. Personal musings, including unrelated ones, and eccentricity are welcome. Keep project work aligned with A and maintain its quality.
+Use llm/ for project-specific notes and experiments. Shared workflows and personal musings belong in /workspace/agent-state. Keep project work aligned with A.
 
 Keep docs/ human-readable, presentable, and organized by topic (for example, network.txt, gameplay.txt, architecture.txt). Write entries in tree notation, sorted by descending priority. Put types and algorithms under architecture. Keep uploaded reference images and generated builds or captures out of Git.
 
-Use visual-review iterations in proportion to the remaining token budget; reserve enough for tests, fixes, and reporting. See llm/style.md for observations from doot.
+Use visual-review iterations in proportion to the remaining token budget; reserve enough for tests, fixes, and reporting. See /workspace/agent-state/reference/style.md for observations from doot.
 
 Todo workflow: docs/todo.txt is authoritative; llm/todo.txt is only a pointer.
-Follow llm/agents/skills/todo/SKILL.md and llm/agents/skills/do/SKILL.md for local
+Follow /workspace/agent-state/skills/todo/SKILL.md and /workspace/agent-state/skills/do/SKILL.md for local
 refinements to the cloud skills. Todo order expresses priority; tasks may be
 done in any order. Only actual dependencies and explicit sequencing constrain
 execution. A blocked item does not block unrelated work. For multi-part
-checklists, llm/agents/skills/ordered-checklist/SKILL.md applies the same rule.
+checklists, /workspace/agent-state/skills/ordered-checklist/SKILL.md applies the same rule.
 A standalone defer>>> or Deferred>>> marker
 (case-insensitive) defers every subsequent line, regardless of headings or
 indentation. Do not execute explicitly deferred entries above the marker either. Deferred
@@ -37,7 +37,7 @@ For Codex-authored Git commits, use author and committer name Codex and email
 codex@users.noreply.github.com. Preserve other authors' attribution when
 replaying their work.
 
-Project agent skills live under llm/agents/skills/, not .agents/.
+Project agent skills live under /workspace/agent-state/skills/, not .agents/.
 
 Use LF line endings for project text files; the user does not want CRLF.
 
@@ -59,3 +59,11 @@ created only to give an operation a semantic name. Preserve purposeful column
 alignment, including comments alongside matrix values.
 For compact local names, use `v` for number-like values, `x` for scalars,
 `i` for integers and `s` for symbols when the context is clear.
+
+Vacation and dream guidance lives in `/workspace/agent-state/skills/vacation/SKILL.md` and
+`/workspace/agent-state/skills/dream/SKILL.md`; use their increased shared detour allowance.
+
+Shared skills and personal agent state belong in `/workspace/agent-state`, not
+in this repository. Resolve `AGENT_STATE_ROOT` there by default. Read VM-local
+`~/.codex/AGENTS.md` for personal preferences; retain project-specific exceptions
+here. Route new reusable skills to the shared repo, not `llm/agents/skills/`.

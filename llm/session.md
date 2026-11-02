@@ -1,7 +1,7 @@
 Current session
-├─ queue: docs/todo.txt; active view via llm/todo.nim
+├─ queue: docs/todo.txt; active view via /workspace/agent-state/tools/todo.nim
 │  └─ defer>>> / Deferred>>> defers every following line, regardless of indentation
-├─ workflow: llm/agents/skills/{todo,do}/SKILL.md; completed details go into docs
+├─ workflow: /workspace/agent-state/skills/{todo,do}/SKILL.md; completed details go into docs
 │  ├─ coherent checkpoints before large changes; reviewed segments afterward
 │  └─ Codex commits use Codex <codex@users.noreply.github.com>
 ├─ toolchain: Nim 2.4, Clang 19, Futhark 0.16 under /workspace/toolchains
