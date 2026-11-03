@@ -7,6 +7,8 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ bounded async listener: per-connection handler factory, concurrent-connection cap,
+│  tracked child cleanup and idempotent close; host still supplies actual auth
 ├─ gateway TLS context and async connection handler: TLS >=1.2, bounded frames,
 │  partial-frame/write deadlines; host supplies admission limits and auth handler
 │  └─ loopback TLS, silent peer and trickled partial-frame deadline tests pass

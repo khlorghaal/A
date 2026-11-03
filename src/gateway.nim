@@ -170,3 +170,80 @@ when defined(ssl):
             raise newException(ValueError, "gateway write deadline")
           await outgoing
           started = getMonoTime()
+
+when defined(ssl):
+  import std/sequtils
+  type
+    GatewayHandler* = proc(payload: string): string
+    GatewayListener* = ref object
+      listener: AsyncSocket
+      context: SslContext
+      clients: seq[AsyncSocket]
+      tasks: seq[Future[void]]
+      stopped, started: bool
+      limit, maxFrame, timeoutMs: int
+
+  proc close*(g: GatewayListener) =
+    if g.stopped: return
+    g.stopped = true
+    g.listener.close()
+    for client in g.clients.mapIt(it): client.close()
+    if not g.started:
+      g.context.destroyContext()
+
+  proc listenGateway*(address: string, port: Port, certificate, privateKey: string,
+                      maxConnections = 64, maxFrame = 65536,
+                      timeoutMs = 5000): GatewayListener =
+    if maxConnections <= 0 or timeoutMs <= 0:
+      raise newException(ValueError, "invalid gateway limits")
+    discard initFrameReader(maxFrame)
+    let context = gatewayTls(certificate, privateKey)
+    let socket = newAsyncSocket(buffered = false)
+    try:
+      socket.bindAddr(port, address)
+      socket.listen()
+    except CatchableError:
+      socket.close()
+      context.destroyContext()
+      raise
+    GatewayListener(listener: socket, context: context, limit: maxConnections,
+                    maxFrame: maxFrame, timeoutMs: timeoutMs)
+
+  proc port*(g: GatewayListener): Port = g.listener.getLocalAddr()[1]
+
+  proc run*(g: GatewayListener, factory: proc(): GatewayHandler,
+            onError: proc(message: string)) {.async.} =
+    ## Caller must await run after close; context and child tasks drain here.
+    if g.started or g.stopped:
+      raise newException(ValueError, "gateway listener already used")
+    if factory.isNil or onError.isNil:
+      g.close()
+      raise newException(ValueError, "gateway handler factory and error sink required")
+    g.started = true
+    proc service(client: AsyncSocket) {.async.} =
+      try:
+        await serveConnection(client, g.context, factory(), g.maxFrame, g.timeoutMs)
+      except CatchableError as e:
+        onError(e.msg)
+      finally:
+        client.close()
+        g.clients.keepItIf(it != client)
+    try:
+      while not g.stopped:
+        var client: AsyncSocket
+        try: client = await g.listener.accept()
+        except OSError:
+          if g.stopped: break
+          raise
+        if g.clients.len >= g.limit:
+          client.close()
+          continue
+        g.clients.add client
+        g.tasks.keepItIf(not it.finished)
+        g.tasks.add service(client)
+    finally:
+      g.close()
+      for task in g.tasks:
+        try: await task
+        except CatchableError as e: onError(e.msg)
+      g.context.destroyContext()

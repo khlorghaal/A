@@ -64,6 +64,33 @@ proc exercise(certificate, key: string) {.async.} =
   except ValueError: expired = true
   doAssert expired and calls == 0
 
+proc admission(certificate, key: string) {.async.} =
+  let listener = listenGateway("127.0.0.1", Port(0), certificate, key,
+                               maxConnections = 1, timeoutMs = 2000)
+  var factories = 0
+  var errors: seq[string]
+  let serving = listener.run(proc(): GatewayHandler =
+    inc factories
+    result = proc(body: string): string = body,
+    proc(message: string) = errors.add message)
+  let first = newAsyncSocket(buffered = false)
+  defer: first.close()
+  await first.connect("127.0.0.1", listener.port)
+  await sleepAsync(30)
+  let second = newAsyncSocket(buffered = false)
+  defer: second.close()
+  await second.connect("127.0.0.1", listener.port)
+  let rejected = second.recv(1)
+  doAssert await withTimeout(rejected, 1000)
+  doAssert (await rejected).len == 0
+  doAssert factories == 1
+  listener.close()
+  doAssert await withTimeout(serving, 2000)
+  await serving
+  listener.close() # idempotent shutdown
+  let unused = listenGateway("127.0.0.1", Port(0), certificate, key)
+  unused.close() # no run: context still released
+
 block configuration:
   let path = getTempDir() / ("a-gateway-tls-" & $getCurrentProcessId())
   if dirExists(path): removeDir(path)
@@ -84,6 +111,7 @@ block configuration:
   doAssert SSL_CTX_ctrl(ctx.context, 130, 0, nil) == 0x0303
   ctx.destroyContext()
   waitFor exercise(certificate, key)
+  waitFor admission(certificate, key)
   for paths in [("", key), (certificate, ""), (certificate, path / "missing")]:
     var rejected = false
     try:
