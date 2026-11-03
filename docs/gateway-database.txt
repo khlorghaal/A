@@ -7,6 +7,8 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ src/gateway_frames.nim: bounded four-byte big-endian length framing; opaque body
+│  └─ tests cover fragmented/coalesced input, empty/binary payload and truncated EOF
 ├─ src/trustdb.nim: NFC IDs, witnessed/paragon scalar stores, volatile swarm edges
 │  ├─ witnessed value and discredit persist; paragon aggregate persists
 │  ├─ refresh weights swarm reports by previous combined reporter credibility
