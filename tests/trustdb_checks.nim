@@ -1,6 +1,47 @@
-import std/[os, tables, times, math]
+import std/[os, tables, times, math, osproc]
 import ../src/[trustdb, identity]
 import ../src/[gateway_frames, gateway_snapshot]
+
+if paramCount() == 2 and paramStr(1) in ["--try-lock", "--hold-lock"]:
+  try:
+    let lock = acquireLock(paramStr(2))
+    if paramStr(1) == "--hold-lock":
+      writeFile(paramStr(2) & ".ready", "ready")
+      while true: sleep(50)
+    lock.release()
+    quit(0)
+  except OSError: quit(3)
+
+block writerOwnership:
+  let path = getTempDir() / ("a-ownership-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  createDir(path)
+  defer: removeDir(path)
+  let file = path / ".owner.lock"
+  let owner = acquireLock(file)
+  let contender = startProcess(getAppFilename(), args = @["--try-lock", file])
+  doAssert contender.waitForExit(2000) == 3
+  contender.close()
+  owner.release()
+  owner.release() # repeated release never closes another descriptor
+  let holder = startProcess(getAppFilename(), args = @["--hold-lock", file])
+  defer:
+    if holder.running: holder.terminate()
+    discard holder.waitForExit(2000)
+    holder.close()
+  let deadline = epochTime() + 2
+  while not fileExists(file & ".ready") and epochTime() < deadline: sleep(10)
+  doAssert fileExists(file & ".ready")
+  var rejected = false
+  try:
+    let unexpected = acquireLock(file)
+    unexpected.release()
+  except OSError: rejected = true
+  doAssert rejected
+  holder.terminate()
+  doAssert holder.waitForExit(2000) != -1
+  let recovered = acquireLock(file) # lock file remains; kernel ownership gone
+  recovered.release()
 
 block framedManualSync:
   let path = getTempDir() / ("a-framed-sync-" & $getCurrentProcessId())

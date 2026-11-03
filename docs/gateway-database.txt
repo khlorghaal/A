@@ -189,7 +189,8 @@ Pseudocode: peer bootstrap and witness exchange
 Persistence proposal: basic transaction
 ├─ one writer; one state file per database directory
 │  ├─ peer trust.toml; gateway gateway.json; auth-owned account storage still pending
-│  └─ callers must enforce one writer; current save helpers do not acquire process lock
+│  └─ atomic writer holds nonblocking POSIX file lease; client additionally holds
+│     directory .owner.lock across load/run/save; gateway startup must do same
 │  └─ logical tables share file so one replacement commits complete state
 ├─ stage complete update in memory; validate all tables before touching live state
 ├─ write same-directory temporary file; flush/fsync; atomic rename over live file

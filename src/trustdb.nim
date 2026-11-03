@@ -133,8 +133,35 @@ proc readDb(path: string, witnessed = false, unified = false):
     elif name == "prior": result.prior = move(values)
     else:               result.discredit = move(values)
 
+type DatabaseLock* = ref object
+  fd: cint
+
+when defined(posix):
+  proc flock(fd, operation: cint): cint {.importc, header: "<sys/file.h>".}
+
+proc acquireLock*(path: string): DatabaseLock =
+  ## Advisory lock; file remains, kernel releases ownership on close/process exit.
+  when defined(posix):
+    let fd = posix.open(path.cstring, posix.O_CREAT or posix.O_RDWR or posix.O_CLOEXEC, posix.Mode(0o600))
+    if fd < 0: raiseOSError(osLastError())
+    if flock(fd, 2 or 4) != 0: # LOCK_EX | LOCK_NB
+      let error = osLastError()
+      discard posix.close(fd)
+      raiseOSError(error, "database writer already active: " & path)
+    result = DatabaseLock(fd: fd)
+  else:
+    raise newException(ValueError, "database ownership requires POSIX flock")
+
+proc release*(lock: DatabaseLock) =
+  when defined(posix):
+    if not lock.isNil and lock.fd >= 0:
+      discard posix.close(lock.fd)
+      lock.fd = -1
+
 proc writeAtomic*(path, data: string) =
-  ## Caller owns database writer; same-directory replacement commits one file.
+  ## Serialize replacements; long-lived owners additionally hold directory owner lock.
+  let lock = acquireLock(path & ".lock")
+  defer: lock.release()
   let tmp = path & ".tmp"
   var f = open(tmp, fmWrite)
   try:

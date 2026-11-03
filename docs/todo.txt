@@ -10,7 +10,6 @@ gateway
   gateway uses TLS over TCP
 
 dbs
-  free: enforce single-writer ownership around existing atomic state replacement
   retention/deletion and account storage; trust/report stores now use single-file transactions
 	peers each keep db/[ trust_witnesssd trust_paragon friends ]
 	peers paragon list is locally volatile, gateway sends it each time. friends are simply appended to paragons.

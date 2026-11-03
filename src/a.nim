@@ -113,6 +113,9 @@ proc dbDirectory(args: openArray[string]): string =
 
 proc main(): int =
   let dbDir = dbDirectory(commandLineParams())
+  createDir(dbDir)
+  let ownership = acquireLock(dbDir / ".owner.lock")
+  defer: ownership.release()
   var db = trustdb.load(dbDir)
   if not initScreen(): return 1
   defer: db.save(dbDir)
