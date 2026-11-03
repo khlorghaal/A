@@ -1,5 +1,24 @@
 import std/[os, tables, times, math]
 import ../src/[trustdb, identity]
+import ../src/[gateway_frames, gateway_snapshot]
+
+block framedManualSync:
+  let path = getTempDir() / ("a-framed-sync-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  defer: removeDir(path)
+  var db: TrustDb
+  var reader = initFrameReader(1024)
+  let payload = encodeSnapshot({"remote": 0.5'f32}.toTable, 1024, 16)
+  let wire = frame(payload, 1024)
+  var deliveries = 0
+  for c in wire:
+    reader.feed($c, proc(body: string) =
+      db.syncParagon(decodeSnapshot(body, 1024, 16), path)
+      inc deliveries)
+  reader.finish()
+  doAssert deliveries == 1
+  doAssert abs(load(path).credibility("remote") - 0.4) < 0.00001
+  doAssert load(path).witnessed.len == 0
 
 block bootstrapPriors:
   var db: TrustDb
