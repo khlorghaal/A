@@ -1,6 +1,39 @@
 import std/[os, tables, times, math]
 import ../src/[trustdb, identity]
 
+block transactions:
+  let path = getTempDir() / ("a-transaction-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  createDir(path)
+  defer: removeDir(path)
+  writeFile(path / "trust_witnessed.toml", "[trust]\nsubject = 0.6\n")
+  writeFile(path / "trust_paragon.toml", "[trust]\nsubject = 0.2\n")
+  var db = load(path)
+  db.save(path)
+  doAssert fileExists(path / "trust.toml")
+  writeFile(path / "trust_paragon.toml", "invalid legacy file")
+  doAssert abs(load(path).paragon["subject"] - 0.2) < 0.00001
+  let committed = readFile(path / "trust.toml")
+  writeFile(path / "trust.toml.tmp", "incomplete replacement")
+  doAssert readFile(path / "trust.toml") == committed
+  doAssert abs(load(path).witnessed["subject"] - 0.6) < 0.00001
+  removeFile(path / "trust.toml.tmp")
+  createDir(path / "trust.toml.tmp") # force staging failure
+  db.setWitness("subject", 0.9)
+  try:
+    db.save(path)
+    doAssert false
+  except IOError, OSError: discard
+  doAssert readFile(path / "trust.toml") == committed
+  removeDir(path / "trust.toml.tmp")
+  db.save(path)
+  doAssert abs(load(path).witnessed["subject"] - 0.9) < 0.00001
+  writeFile(path / "trust.toml", "[trust]\nsubject = 0.8\n")
+  try:
+    discard load(path)
+    doAssert false
+  except ValueError: discard # no fallback to stale legacy state
+
 block isolatedClients:
   let tmp = getTempDir() / ("a-db-fixture-" & $getCurrentProcessId() & "-" & $int(epochTime()))
   for i in 1..4:
@@ -68,6 +101,7 @@ try:
 except ValueError: discard
 doAssert abs(load(dir).witnessed[composed] - 0.3) < 0.00001
 
+if fileExists(dir / "trust.toml"): removeFile(dir / "trust.toml")
 writeFile(dir / "trust_witnessed.toml", "[trust]\nalice = 0.5 # standard TOML comment\n")
 doAssert abs(load(dir).witnessed["alice"] - 0.5) < 0.00001
 
@@ -118,6 +152,7 @@ try:
   doAssert false
 except ValueError: discard
 
+if fileExists(dir / "trust.toml"): removeFile(dir / "trust.toml")
 writeFile(dir / "trust_witnessed.toml", "[trust]\n\"é\" = 0.5\n\"é\" = 0.6\n")
 try:
   discard load(dir)

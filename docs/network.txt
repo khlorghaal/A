@@ -122,7 +122,8 @@ Authentication research (design only; implementation remains deferred)
 
 Swarm storage
 ├─ current TrustDb keeps swarm observations in memory, keyed by reporter and subject
-└─ save writes witnessed and paragon stores only; swarm is not restored after restart
+└─ save writes witnessed, discredit and paragon tables into trust.toml; swarm
+   not restored after restart; legacy files read only when trust.toml absent
 
 Player IDs
 ├─ current trust-store comparisons use canonical Unicode NFC; compatibility forms

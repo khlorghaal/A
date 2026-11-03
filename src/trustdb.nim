@@ -2,6 +2,8 @@
 import std/[math, os, sets, tables]
 import toml_serialization
 import trust, identity
+when defined(posix):
+  from std/posix import nil
 
 type
   TrustDb* = object
@@ -79,15 +81,19 @@ proc advance*(db: var TrustDb, dt: float32) =
     else: db.discredit.del(id)
   db.refresh()
 
-proc readDb(path: string, witnessed = false): tuple[trust, discredit: Table[string, float32]] =
+proc readDb(path: string, witnessed = false, unified = false):
+    tuple[trust, discredit, paragon: Table[string, float32]] =
   if not fileExists(path): return
   var root: TomlValueRef
   try: root = Toml_v100.loadFile(path, TomlValueRef)
   except TomlError as e: raise newException(ValueError, "invalid trust TOML: " & e.msg)
   if root.kind != TomlKind.Table or "trust" notin root.tableVal:
     raise newException(ValueError, "invalid trust TOML: " & path)
+  if unified and ("discredit" notin root.tableVal or "paragon" notin root.tableVal):
+    raise newException(ValueError, "incomplete trust state: " & path)
   for name, section in root.tableVal:
-    if name != "trust" and not (witnessed and name == "discredit"):
+    if name != "trust" and not (witnessed and name == "discredit") and
+       not (unified and name == "paragon"):
       raise newException(ValueError, "invalid trust TOML: " & path)
     if section.kind notin {TomlKind.Table, TomlKind.InlineTable}:
       raise newException(ValueError, "invalid trust TOML: " & path)
@@ -102,13 +108,13 @@ proc readDb(path: string, witnessed = false): tuple[trust, discredit: Table[stri
         raise newException(ValueError, "duplicate normalized player ID in " & path)
       values[normalized] = value
     if name == "trust": result.trust      = move(values)
+    elif name == "paragon": result.paragon = move(values)
     else:               result.discredit = move(values)
 
 proc writeDb(path: string, values: Table[string, float32],
-             discredit = default(Table[string, float32]), witnessed = false) =
-  let root = Toml_v100.decode(if witnessed: "[trust]\n[discredit]\n" else: "[trust]\n",
-                             TomlValueRef)
-  for (name, data) in [("trust", values), ("discredit", discredit)]:
+             discredit, paragon: Table[string, float32]) =
+  let root = Toml_v100.decode("[trust]\n[discredit]\n[paragon]\n", TomlValueRef)
+  for (name, data) in [("trust", values), ("discredit", discredit), ("paragon", paragon)]:
     if name notin root.tableVal: continue
     let section = root.tableVal[name]
     for id, value in data:
@@ -132,21 +138,35 @@ proc writeDb(path: string, values: Table[string, float32],
       data.add encoded[i]
       inc i
   let tmp = path & ".tmp"
-  writeFile(tmp, data)
+  var f = open(tmp, fmWrite)
+  try:
+    f.write(data)
+    f.flushFile()
+    when defined(posix):
+      if posix.fsync(cint(f.getFileHandle())) != 0: raiseOSError(osLastError())
+  finally: f.close()
   moveFile(tmp, path)
+  when defined(posix):
+    let fd = posix.open(parentDir(path).cstring, posix.O_RDONLY)
+    if fd < 0: raiseOSError(osLastError())
+    defer: discard posix.close(fd)
+    if posix.fsync(fd) != 0: raiseOSError(osLastError())
 
 proc load*(directory: string): TrustDb =
-  let witnessed = readDb(directory / "trust_witnessed.toml", witnessed = true)
+  let unified = fileExists(directory / "trust.toml")
+  let witnessed = if unified: readDb(directory / "trust.toml", witnessed = true, unified = true)
+                  else: readDb(directory / "trust_witnessed.toml", witnessed = true)
   result.witnessed = witnessed.trust
   result.discredit = witnessed.discredit
   for id in result.discredit.keys:
     if id notin result.witnessed:
       raise newException(ValueError, "discredit without witnessed credibility")
-  result.paragon   = readDb(directory / "trust_paragon.toml").trust
+  result.paragon = if unified: witnessed.paragon
+                   else: readDb(directory / "trust_paragon.toml").trust
   result.refresh()
 
 proc save*(db: TrustDb, directory: string) =
-  # Validate both tables before replacing either file.
+  # Validate complete state before replacing live file.
   for values in [db.witnessed, db.paragon, db.discredit]:
     var ids: HashSet[string]
     for id, value in values:
@@ -160,5 +180,4 @@ proc save*(db: TrustDb, directory: string) =
     if id notin witnesses:
       raise newException(ValueError, "discredit without witnessed credibility")
   createDir(directory)
-  writeDb(directory / "trust_witnessed.toml", db.witnessed, db.discredit, true)
-  writeDb(directory / "trust_paragon.toml", db.paragon)
+  writeDb(directory / "trust.toml", db.witnessed, db.discredit, db.paragon)
