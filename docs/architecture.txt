@@ -28,6 +28,8 @@ current code
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
 
 Trust persistence
+├─ swarm new-report count capped at 65536 by default; host may set maxSwarmReports
+│  └─ watermark cache shares quota; entries for observed departed sources pruned
 ├─ syncParagon validates full manual snapshot, seeds new subjects, saves before
 │  publishing staged state; invalid snapshot/write failure preserves live memory
 ├─ bootstrap(subjects) seeds prior W from mean P (empty fallback .5), missing P=.5

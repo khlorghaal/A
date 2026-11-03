@@ -61,6 +61,17 @@ block framedManualSync:
   doAssert abs(load(path).credibility("remote") - 0.4) < 0.00001
   doAssert load(path).witnessed.len == 0
 
+block swarmQuota:
+  var db = TrustDb(maxSwarmReports: 1)
+  db.setSwarm("reporter", "subject", 0.5)
+  db.setSwarm("reporter", "subject", 0.6)
+  try:
+    db.setSwarm("another", "subject", 0.9)
+    doAssert false
+  except ValueError: discard
+  doAssert db.swarm.len == 1
+  doAssert db.swarm[("reporter", "subject")] == 0.6'f32
+
 block bootstrapPriors:
   var db: TrustDb
   db.bootstrap(["new"])

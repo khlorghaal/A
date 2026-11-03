@@ -9,6 +9,7 @@ type
   TrustDb* = object
     witnessed*, paragon*: Table[string, float32]
     swarm*              : Table[tuple[reporter, subject: string], float32]
+    maxSwarmReports*    : int # zero selects default 65536; host may lower quota
     scores, discredit, prior: Table[string, float32]
 
 func validValue(x: float32): bool =
@@ -30,6 +31,10 @@ proc setParagon*(db: var TrustDb, id: string, value: float32) =
 proc setSwarm*(db: var TrustDb, reporter, subject: string, value: float32) =
   let reporter = checkedId(reporter, value)
   let subject = playerId(subject)
+  if db.maxSwarmReports < 0: raise newException(ValueError, "invalid swarm quota")
+  let limit = if db.maxSwarmReports == 0: 65536 else: db.maxSwarmReports
+  if (reporter, subject) notin db.swarm and db.swarm.len >= limit:
+    raise newException(ValueError, "swarm report quota exceeded")
   db.swarm[(reporter, subject)] = value
 
 proc credibility*(db: TrustDb, subject: string): float32 =

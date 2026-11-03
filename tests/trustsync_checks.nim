@@ -97,3 +97,28 @@ right.peers[1].ping = blastd.Milliseconds(80)
 doAssert abs(right.positionTrust(right.peers[1], 0) - 0.8) < 0.0001
 doAssert abs(right.positionTrust(right.peers[1], 0.3) - 0.82) < 0.0001
 echo "witness dissemination checks passed"
+
+block boundedWatermarks:
+  var source = new TrustDb
+  source[].setWitness("ship", 0.5)
+  var sender = initNet(PeerInfo(id: 1), 1)
+  var outgoing = initTrustSync(sender, 1, source)
+  var target = new TrustDb
+  target[].maxSwarmReports = 1
+  var receiver = initNet(PeerInfo(id: 9), 1)
+  receiver.peers[1] = Peer(info: PeerInfo(id: 1, playerId: "reporter"))
+  receiver.peers[2] = Peer(info: PeerInfo(id: 2, playerId: "reporter"))
+  receiver.all = @[receiver.peers[1], receiver.peers[2]]
+  var incoming = initTrustSync(receiver, 1, target)
+  outgoing.publish()
+  incoming.kind.queue.add (1'u64, outgoing.kind.row[0])
+  incoming.receive(receiver)
+  source[].setWitness("ship", 0.7)
+  outgoing.publish()
+  incoming.kind.queue.add (2'u64, outgoing.kind.row[0])
+  incoming.receive(receiver)
+  doAssert target[].swarm[("reporter", "ship")] == 0.5'f32
+  receiver.all = @[receiver.peers[2]]
+  incoming.kind.queue.add (2'u64, outgoing.kind.row[0])
+  incoming.receive(receiver)
+  doAssert target[].swarm[("reporter", "ship")] == 0.7'f32

@@ -1,5 +1,5 @@
 ## Witness-only exchange over the P2P datakind interface.
-import std/[algorithm, json, math, tables]
+import std/[algorithm, json, math, tables, sets]
 import p2p, trust, trustdb, identity
 
 type
@@ -16,6 +16,7 @@ func keyOf(id: string): uint64 =
 
 proc initTrustSync*(n: var Net, kind: KindId, db: ref TrustDb): TrustSync =
   if db.isNil: raise newException(ValueError, "missing trust database")
+  if db.maxSwarmReports < 0: raise newException(ValueError, "invalid swarm quota")
   TrustSync(kind: n.register(kind, dropOld = true, initialFull = true), db: db)
 
 proc publish*(s: var TrustSync) =
@@ -39,6 +40,13 @@ proc publish*(s: var TrustSync) =
 
 proc receive*(s: var TrustSync, n: Net) =
   ## The network transport must authenticate source IDs and their player IDs.
+  var active: HashSet[PeerId]
+  for p in n.all: active.incl p.info.id
+  var departed: seq[tuple[source: PeerId, subject: string]]
+  for index in s.seen.keys:
+    if index.source notin active: departed.add index
+  for index in departed: s.seen.del(index)
+  let limit = if s.db.maxSwarmReports == 0: 65536 else: s.db.maxSwarmReports
   for receipt in s.kind.queue:
     let p = n.peers.getOrDefault(receipt.source)
     if p.isNil or p.info.playerId.len == 0: continue
@@ -58,6 +66,7 @@ proc receive*(s: var TrustSync, n: Net) =
       if keyOf(subject) != d.key: continue
       let index = (receipt.source, playerId(subject))
       if index in s.seen and d.revision <= s.seen[index]: continue
+      if index notin s.seen and s.seen.len >= limit: continue
       s.db[].setSwarm(p.info.playerId, subject, float32(number))
       s.seen[index] = d.revision
     except ValueError, KeyError, JsonParsingError:
