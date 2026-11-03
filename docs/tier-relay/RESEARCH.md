@@ -68,3 +68,15 @@ First-party import graph across A and blastd has no cycles. Module fan-out: `a` 
 ### Verification limits and questions for Sol
 
 Static source and nimsuggest outlines only; no builds, diagnostics or tests. Prior instruction still prohibits tests/debug. Decide whether estimated CCN scan justifies installing or building Nim AST metrics; review gateway/trustsync seams and tag findings before any refactor.
+
+### Test code
+
+- Tests deserve same maintainability review as production code, with different aim: cases should read as behavior contracts. Prefer clear setup/assertion over abstraction that hides expected behavior; reuse fixture mechanics when it guarantees isolation and cleanup.
+- blastd has 42 named `unittest` cases across `deps/blastd/tests`; source scan found individual case CCN estimates at most ~3. `core_checks.nim` uses global fake hooks, reset in suite `setup` (`deps/blastd/tests/core_checks.nim:13-49,66-70`). This is understandable shared fixture state; future cases must keep reset complete.
+- A test files mostly use top-level `doAssert` and named `block`s rather than `unittest` cases (`tests/trustdb_checks.nim`, `tests/gateway_checks.nim`). That makes per-case complexity comparison harder; sequential assertions still read directly, but failure stops at first point and some cleanup relies on reaching file end (`tests/trustdb_checks.nim:179-304`).
+- Integration complexity looks purposeful where boundary is target: TLS checks use real async sockets plus OpenSSL-generated certs (`tests/gateway_tls_checks.nim:8-55,97-148`); multi-terminal checks launch clients under POSIX PTYs and clean child processes in `finally` (`tests/multi_terminal.nim:1-35,100-167`). These carry platform, binary, process and timing assumptions; keep prerequisites and cleanup explicit.
+- No test code executed. CCN figures above remain source-scan estimates, not test quality scores.
+
+### General assessment
+
+CCN, size and import counts prioritize inspection; never establish poor design alone. Trace state ownership, data/control flow, cohesion, invariants and failure cleanup before refactoring. Apply same correctness and readability bar to tests; judge test code by clear behavior contracts, deterministic isolation, useful failures and reliable cleanup, not by minimizing lines or branches.
