@@ -7,6 +7,9 @@ build and inspection
 ├─ make test runs game, sync, hash/map and trust checks without tmux
 │  └─ gateway TLS checks require OpenSSL runtime and openssl command; temporary certs
 ├─ make check builds the client and checks the network/sync modules
+├─ make gateway builds standalone TLS/database preflight, without game/Futhark
+│  ├─ build/gateway/gateway --check --cert FILE --key FILE [--db-dir DIR]
+│  └─ default DB build/gateway/db; live serving disabled pending auth provider
 ├─ make multi opens an interactive two-client tmux session
 ├─ make build/test/colors builds the interactive true-color sample
 ├─ rebuild Futhark imports with make -B build/A fgs=-d:opirRebuild

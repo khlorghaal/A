@@ -1,4 +1,4 @@
-.PHONY: run multi multi_agentvm owner_measurements check test clean
+.PHONY: run multi multi_agentvm owner_measurements check test clean gateway
 
 ifneq ($(TERMUX_VERSION),)
   override fgs += -d:opirRebuild -d:syspaths=$(PREFIX)/include:$(PREFIX)/lib/clang/latest/include:$(PREFIX)/include/aarch64-linux-android
@@ -90,3 +90,10 @@ build/gateway/relay: nim.cfg tests/socket_gateway.nim tests/sim_socket.nim src/p
 	@if [ -f build/gateway ]; then mv build/gateway build/gateway.previous; fi
 	mkdir -p build/gateway
 	nim c $(fgs) -o:$@ tests/socket_gateway.nim
+
+# Standalone gateway preflight; live auth provider still deferred.
+gateway: build/gateway/gateway
+
+build/gateway/gateway: nim.cfg a.nimble src/gateway_main.nim src/gateway.nim src/gateway_frames.nim src/trustdb.nim src/trust.nim src/identity.nim
+	mkdir -p build/gateway
+	nim c $(fgs) -d:ssl -o:$@ src/gateway_main.nim

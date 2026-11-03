@@ -1,11 +1,10 @@
 gateway
-  free: standalone build/config checks; keep production auth fail-closed
   free: operation dispatch tests with injected authenticated role/session; no login implementation
   draft/pseudocode: docs/gateway-database.txt
   settle paragon visibility and gateway reporter-weight inputs
   manual paragon DB sync transport; snapshot access separate from paragon-only report channel
   gateway STCP: TLS over TCP
-  need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
+  live gateway assembly; standalone preflight build exists, no game logic
   only paragons contact the gateway after signin
   gateway uses TLS over TCP
 

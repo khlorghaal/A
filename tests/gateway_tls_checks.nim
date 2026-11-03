@@ -1,5 +1,7 @@
 import std/[os, osproc, net, asyncdispatch, asyncnet]
 import ../src/gateway_frames
+import ../src/gateway_main
+from ../src/trustdb import acquireLock, release
 import ../src/gateway
 from std/openssl import SSL_CTX_ctrl
 proc exercise(certificate, key: string) {.async.} =
@@ -106,6 +108,24 @@ block configuration:
     discard child.waitForExit(1000)
     child.close()
   doAssert child.waitForExit(10000) == 0
+  let config = parseConfig(@["--check", "--cert", certificate, "--key", key,
+                             "--db-dir", path / "db"])
+  doAssert config.check and config.port == 7443
+  checkConfig(config)
+  let owner = acquireLock(config.dbDir / ".owner.lock")
+  var denied = false
+  try: checkConfig(config)
+  except OSError: denied = true
+  owner.release()
+  doAssert denied
+  for options in [@["--port", "0"], @["--max-frame", "-1"], @["--timeout-ms", "0"],
+                  @["--max-connections", "0"], @["--port", "nonsense"], @["--port"],
+                  @["--unknown", "value"]]:
+    var invalid = false
+    try:
+      discard parseConfig(@["--cert", certificate, "--key", key] & options)
+    except ValueError: invalid = true
+    doAssert invalid
   let ctx = gatewayTls(certificate, key)
   # OpenSSL ssl.h SSL_CTRL_GET_MIN_PROTO_VERSION = 130.
   doAssert SSL_CTX_ctrl(ctx.context, 130, 0, nil) == 0x0303

@@ -7,6 +7,8 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ src/gateway_main.nim: standalone preflight; validates TLS/config/database lease
+│  └─ make gateway builds executable; live mode exits 2 before opening listener
 ├─ gateway report deletion uses revisioned tombstones; excluded from aggregation
 │  but retained until fresh source session; saved v2 reads legacy v1 report state
 ├─ report-key quota defaults 65536; state save/load byte limit defaults 16 MiB
