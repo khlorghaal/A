@@ -1,4 +1,6 @@
-# Paragon visibility and reporter weights
+# Research scouts
+
+## Paragon visibility and reporter weights
 
 Question: resolve active todo `settle paragon visibility and gateway reporter-weight inputs` (`docs/todo.txt:3`).
 
@@ -26,3 +28,43 @@ Question: resolve active todo `settle paragon visibility and gateway reporter-we
 ## Limits
 
 Inspected todo, design docs and implementation. No external sources, builds, tests or experiments. Prior instruction prohibits tests/debug. No policy decision or implementation made.
+
+
+## Nim complexity and coupling scout
+
+Question: locate high branch, dependency and responsibility complexity for Sol.
+
+### Method and limits
+
+- Nim 2.4.0 `nimsuggest outline` queried `gateway`, `trustdb`, `trustsync`, `a` and blastd. Confirmed procedure boundaries/signatures; outline does not emit cyclomatic metrics.
+- No installed Nim-aware CCN analyzer found. Lizard's documented language list omits Nim: https://github.com/terryyin/lizard .
+- CCN estimates below use source scan: baseline 1 + `if/elif/for/while/when/except`, each `case of` arm, and boolean `and/or`. Not AST-derived; treat rankings and decision locations as leads, not authoritative CCN. No production code changed.
+
+### Highest estimated branch complexity
+
+- `src/gateway.nim:153-198` `loadGateway`: CCN ~39. JSON schema/version migration, role and report validation, quota, ID normalization, revisions in one loader.
+- `src/gateway.nim:86-126` `dispatch`: CCN ~30. Authenticated principal checks, request validation, snapshot/report/delete routing and payload parsing.
+- `src/trustsync.nim:41-74` `receive`: CCN ~25. Queue cleanup, source identity, JSON decoding, key/revision/quota checks, database mutation.
+- `src/a.nim:116-188` `main`: CCN ~22. Game loop owns timing, network tick, player bootstrap, trust step, terminal events and rendering.
+- `src/trustdb.nim:115-145` `readDb`: CCN ~22. Legacy/unified schema acceptance, nested TOML validation and error conversion.
+- Other raised points: `src/trustdb.nim:43-78` `refresh` ~14; `deps/blastd/src/blastd.nim:142-159` `receive` ~13; `src/gateway.nim:215-253` `serveConnection` ~12; `src/gateway.nim:297-332` `run` ~12.
+
+### Coupling
+
+First-party import graph across A and blastd has no cycles. Module fan-out: `a` 5; `gateway` 4; `trustsync` 4. Fan-in: `trustdb` 4; `identity` 4; `p2p` 3. These are static import counts, not severity scores.
+
+- `gateway` joins role/report state, request codec/dispatch, persistence and optional TLS/async listener in one module (`src/gateway.nim:1-5,86-198,199-332`). `dispatchStored` infers persistence need by parsing `dispatch`'s serialized JSON reply (`:142-151`); internal commit behavior depends on response shape.
+- `trustdb` combines credibility state/calculation, TOML migration, POSIX ownership lock and atomic file writer (`src/trustdb.nim:1-8,43-77,115-219`). Gateway imports it only for `writeAtomic` (`src/gateway.nim:4`), coupling gateway storage to trust-domain module.
+- `trustsync.receive` adapts network queue to JSON schema, authenticated peer identity and trust DB writes (`src/trustsync.nim:41-74`). Integration may be intentional; function complexity makes assumptions hard to review together.
+- `a.main` is expected integration hub, but combines simulation, UI, network and trust lifecycle (`src/a.nim:116-188`).
+- `blastd` depends only on its `units` module within first-party graph (`deps/blastd/src/blastd.nim:3-4`); P2P wrapper isolates unit adaptation.
+
+### Other review leads
+
+- `src/sync.nim:4,44` has `#fixme` for beta semantics and `#todo` for one-line equation lambdas.
+- Deferred markers remain in `src/client.nim:97` (D-pad artwork) and `src/identity.nim:18` (auth integration); leave deferred. No `#!!` or `#?` tags found in scanned source.
+- Possible review seam: separate shared atomic-write utility from `trustdb`; return structured dispatch result instead of reparsing JSON; split gateway schema decoding from role/report policy. These are proposals only. Sol should assess against intentional simplicity before refactor.
+
+### Verification limits and questions for Sol
+
+Static source and nimsuggest outlines only; no builds, diagnostics or tests. Prior instruction still prohibits tests/debug. Decide whether estimated CCN scan justifies installing or building Nim AST metrics; review gateway/trustsync seams and tag findings before any refactor.
