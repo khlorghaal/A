@@ -1,5 +1,5 @@
 gateway
-  gateway stcp
+  gateway STCP: TLS over TCP
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
   only paragons contact the gateway after signin
   gateway uses TLS over TCP

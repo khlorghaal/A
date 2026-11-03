@@ -16,6 +16,8 @@ build and inspection
    └─ captures are reconstructions; inspect raw terminal output for shaping issues
 
 Build behavior
+├─ make test reruns blastd checks when source/test/package/Makefile timestamps advance
+│  └─ build/blastd-testpass records success; delete stamp after compiler/flag changes
 ├─ fgs supplies extra Nim flags; Termux adds Futhark include paths and opirRebuild
 ├─ game binaries depend on src/*.nim
 └─ build/gateway/relay is the test relay; the identity gateway is still pending

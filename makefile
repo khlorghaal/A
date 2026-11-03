@@ -45,8 +45,16 @@ check: build/A
 	nim check $(fgs) src/p2p.nim
 	nim check $(fgs) src/sync.nim
 
+blastd_sources = $(wildcard deps/blastd/src/*.nim deps/blastd/tests/*.nim) \
+                 deps/blastd/Makefile deps/blastd/blastd.nimble
+
+build/blastd-testpass: $(blastd_sources)
+	mkdir -p build
+	$(MAKE) -C deps/blastd test
+	touch $@
+
 # Automated checks do not launch the interactive tmux session.
-test:
+test: build/blastd-testpass
 	mkdir -p build
 	nim c $(fgs) -o:build/game-checks -d:aTests -r src/a.nim
 	nim c $(fgs) -o:build/sync-checks           -r tests/sync_checks.nim
