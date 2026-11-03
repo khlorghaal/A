@@ -1,4 +1,5 @@
 network
+├─ gateway/database draft and pseudocode: docs/gateway-database.txt
 ├─ trust modules (game integration pending)
 │  ├─ credibility: user credibility, including disruptive desyncs
 │  ├─ reliability: locally measured network integrity
@@ -13,7 +14,7 @@ network
 │  └─ interpolate linearly and clamp at endpoints; jitter and loss remain unspecified
 └─ current network transport is external; test gateway uses simulated delay and loss
 
-missing entries have 0 trust. new accounts on the gateway db have .5 .
+missing entries have 0 trust. new accounts on gateway start combined credibility .4.
 paragons are either the players manually added friends or the gateway's highly trusted peers.
 db/[ trust_witnessed trust_paragon trust_swarm friends ].toml
 
@@ -48,7 +49,11 @@ Credibility reports
 ├─ each other's contribution about a subject is other credibility × reported credibility
 └─ average contributions within the relevant category; reliability remains local
 
-Bootstrap clarification: zero initializes peers; the database sets new accounts to .5.
+Bootstrap: peers start zero; new-account component seeds must yield combined .4
+under .4*witnessed + .4*paragon + .2*swarm. Draft defaults: P=.5, S=0; peer W
+starts mean(current P), empty fallback .5. Seed unseen subjects only; preserve W
+on manual sync. Prior-only W excluded from firsthand broadcasts. Heterogeneous P
+yields subject-specific initial scores; .4 describes uniform fresh defaults.
 
 Original author specification, verbatim:
 credibility: of user credibility such as suspicious or highly disruptive desyncs
