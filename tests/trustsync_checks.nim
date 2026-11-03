@@ -2,6 +2,7 @@ import std/[tables, math]
 import ../src/[p2p, trustdb, trustsync]
 from blastd import nil
 
+static: doAssert not (Milliseconds is blastd.Milliseconds)
 static: doAssert not compiles(Milliseconds(1) + Seconds(1))
 static: doAssert not compiles(Seconds(1) + Milliseconds(1))
 static: doAssert not compiles(Seconds(1) < Milliseconds(1))

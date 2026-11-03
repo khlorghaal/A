@@ -21,7 +21,8 @@ Client database paths
 
 current code
 ├─ src/p2p.nim adapts local blastd checkout; host supplies authenticated transport
-│  └─ independent time types: convert at boundary; ping in milliseconds, age in seconds
+│  └─ independent distinct time types; convert at boundary: ping in milliseconds,
+│     age and tick duration in seconds; seconds/milliseconds convert explicitly
 ├─ src/sync.nim reconciles marked entity fields and tracks ownership
 ├─ src/client.nim owns terminal initialization, drawing, controls and debug header
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
