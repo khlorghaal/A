@@ -1,5 +1,4 @@
 gateway
-  draft/pseudocode: docs/gateway-database.txt
   settle paragon visibility and gateway reporter-weight inputs
   manual paragon DB sync transport; snapshot access separate from paragon-only report channel
   gateway STCP: TLS over TCP
