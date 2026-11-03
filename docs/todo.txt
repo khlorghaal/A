@@ -1,11 +1,10 @@
 units like seconds miliseconds should be strongly typed and convert apprpropriately
 
-p2p core as its own library in its own subrepo
-
 gateway
+  gateway stcp
   need a seperate build for gateway, gateway has no game logic, it is kinda a torrent tracker
   only paragons contact the gateway after signin
-  gateway exclusively uses ssl
+  gateway uses TLS over TCP
 
 dbs
 	peers each keep db/[ trust_witnesssd trust_paragon friends ]
@@ -33,13 +32,21 @@ vterm capture: represent motion appropriately, perhaps with a diff or B-frames, 
 
 Futhark PR: detect Termux system headers for opir
 
-auth
+auth (deferred)
   auth and gateway as the same server
   gateway authoritates peer identities and session tokens
   gateway and authenticated peer IDs: enforce NFC identity comparison
--= users do not ssh to gateway, the client handles
+-= gateway uses TLS over TCP; client handles account creation and login
 client connects to gateway with username. if gw does not know user, indicates so to client, client asks user for gpg pubkey which it gives to gw to store and enter with username. client may then login to gw by decrypting their session token with their privkey.
 ses tok is used for dpop without contacting gw, im unsure how that works, document it well
+  separate peer auth over UDP: local verification of gateway-issued session token
+  and proof; key management, replay, revocation; user will spec
+  OpenPGP login proof and recovery; validate identity and gateway certificate
+  transport binding; reject unauthenticated or old-session peer events
+
+causals (deferred)
+  evidence, attribution, timing, disagreement rules for highly disruptive outcomes,
+  e.g. ship launched missile before dying
 
 hit adjudication and defender-favoring rules
   Decide whether a reported weapon hit counts and how much damage it causes when
@@ -52,11 +59,11 @@ define packet-independent severity and reliability effects of jitter and loss
 
 revisit username registration policy; first registration may claim an unused name for now
 
-a standard ssl for login and session tokens
+TLS over TCP for gateway login and session tokens
 gateway
 	players register with gateway via gpg keys
 	use linux system libs
-	gateway is sshed into for account creation
+	client handles account creation with gateway over TLS and TCP
 	passwords via gpg
 	check if docs contain dpop for peers
 	  dpop does not need recontacting gw

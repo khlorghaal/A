@@ -74,7 +74,11 @@ cred-= decred*decred *dt *.001;
 cred= sqrt(cred+.001dt) sq
 
 Session credentials and peer proofs (design; not implemented)
-├─ TLS protects registration and login; the client verifies the gateway certificate
+├─ gateway uses TLS over TCP; client verifies gateway certificate and identity.
+│  Peer traffic uses UDP and separate auth; no HTTP
+├─ peers verify gateway-issued session token and proof locally, without gateway
+│  contact per connection; user will spec peer auth protocol
+├─ credential and challenge details below are candidates, not settled protocol
 ├─ registration associates a player ID with a public OpenPGP key; the gateway
 │  challenges the client to demonstrate possession of its corresponding secret key
 ├─ after login, a gateway-signed, short-lived credential can bind the player ID
@@ -92,7 +96,24 @@ Session credentials and peer proofs (design; not implemented)
 ├─ peers cannot learn early revocations offline without extra distribution;
 │  short expiry bounds exposure and gateway signing keys need rotation
 └─ this is a proposed peer proof, not RFC 9449 DPoP: standard DPoP uses HTTP
-   proofs bound to a method and URI, and would require an HTTP-based profile
+   proofs bound to HTTP method and URI; intended protocol has no HTTP
+
+Authentication research (design only; implementation remains deferred)
+├─ TLS authenticates gateway when client verifies certificate and name;
+│  application login separately establishes player identity
+├─ candidate: fresh single-use gateway challenge signed by registered OpenPGP key;
+│  define registration, recovery, key changes. Encrypted-token idea also remains
+├─ candidate: gateway-signed session credential plus peer challenge for offline
+│  verification; user will specify keys, binding, replay and revocation
+├─ DPoP is OAuth HTTP mechanism, not generic peer proof; token and request binding
+│  and replay checks offer reference, not drop-in protocol for peer traffic
+├─ avoid replayable TLS 1.3 early data for registration, login and state changes
+│  unless application provides appropriate replay protection
+├─ UDP offers no delivery or ordering guarantee; peer transport handles required
+│  lifecycle ordering, retries and duplicate effects
+└─ sources: https://www.rfc-editor.org/rfc/rfc9449.html
+            https://www.rfc-editor.org/rfc/rfc9846.html
+            https://www.rfc-editor.org/rfc/rfc7800.html
 
 Swarm storage
 ├─ current TrustDb keeps swarm observations in memory, keyed by reporter and subject
