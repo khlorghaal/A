@@ -1,3 +1,4 @@
+## Test map: CLI path parsing; terminal ABI/Unicode widths; geometry, RNG and controls.
 import std/unicode
 
 doAssert dbDirectory(@[]) == "build/client/db"

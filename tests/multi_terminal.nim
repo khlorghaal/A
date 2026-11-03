@@ -1,4 +1,5 @@
-## Four terminal clients using the test-only loopback gateway (Linux/Unix).
+## Test map: four POSIX PTY clients; movement under delay/loss; exit, cleanup and DB isolation.
+## Requires build/A-multi and POSIX PTY/libutil support.
 import std/[monotimes, net, os, osproc, streams, strutils, times, tables]
 import posix
 import multi_observations

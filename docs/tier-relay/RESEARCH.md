@@ -27,7 +27,7 @@ Question: resolve active todo `settle paragon visibility and gateway reporter-we
 
 ## Limits
 
-Inspected todo, design docs and implementation. No external sources, builds, tests or experiments. Prior instruction prohibits tests/debug. No policy decision or implementation made.
+Inspected todo, design docs and implementation. No external sources, builds or policy experiments. No policy decision or implementation made.
 
 
 ## Nim complexity and coupling scout
@@ -67,7 +67,7 @@ First-party import graph across A and blastd has no cycles. Module fan-out: `a` 
 
 ### Verification limits and questions for Sol
 
-Static source and nimsuggest outlines only; no builds, diagnostics or tests. Prior instruction still prohibits tests/debug. Decide whether estimated CCN scan justifies installing or building Nim AST metrics; review gateway/trustsync seams and tag findings before any refactor.
+At the time of this scout, source and nimsuggest outlines only; no builds or diagnostics. The test run below came later. Decide whether estimated CCN scan justifies installing or building Nim AST metrics; review gateway/trustsync seams and tag findings before any refactor.
 
 ### Test code
 
@@ -75,7 +75,18 @@ Static source and nimsuggest outlines only; no builds, diagnostics or tests. Pri
 - blastd has 42 named `unittest` cases across `deps/blastd/tests`; source scan found individual case CCN estimates at most ~3. `core_checks.nim` uses global fake hooks, reset in suite `setup` (`deps/blastd/tests/core_checks.nim:13-49,66-70`). This is understandable shared fixture state; future cases must keep reset complete.
 - A test files mostly use top-level `doAssert` and named `block`s rather than `unittest` cases (`tests/trustdb_checks.nim`, `tests/gateway_checks.nim`). That makes per-case complexity comparison harder; sequential assertions still read directly, but failure stops at first point and some cleanup relies on reaching file end (`tests/trustdb_checks.nim:179-304`).
 - Integration complexity looks purposeful where boundary is target: TLS checks use real async sockets plus OpenSSL-generated certs (`tests/gateway_tls_checks.nim:8-55,97-148`); multi-terminal checks launch clients under POSIX PTYs and clean child processes in `finally` (`tests/multi_terminal.nim:1-35,100-167`). These carry platform, binary, process and timing assumptions; keep prerequisites and cleanup explicit.
-- No test code executed. CCN figures above remain source-scan estimates, not test quality scores.
+- `make test` and `make multi_agentvm` passed after the documentation pass described below. Added regression coverage checks stale reports cannot renew TTL and malformed boolean input cannot consume a revision (`tests/sync_checks.nim`). CCN figures above remain source-scan estimates, not test quality scores.
+
+### Documentation audit
+
+- `docs/network.txt:34` promises paragons are hidden, while `docs/gateway-database.txt:99-106` says visibility is unresolved. Gateway implementation keeps membership private, but the policy wording still needs one authoritative decision.
+- `docs/network.txt:36-39` retains the older two-authority/one-auth topology; a later section explicitly supersedes it with auth and gateway on one server. Marking the earlier block historical would make the intended precedence clearer.
+- `llm/p2p-research.txt:68` says owner bonus `+.5`; current `docs/architecture.txt:56` and `llm/synchronization.md:17` specify `0.3`. Research/history status at that line is unclear.
+- `llm/blastd-handoff.txt:4-6` says A still uses its original core and needs a remote before submodule linkage; current `docs/build.txt:2-3` describes the blastd submodule. The handoff lacks an archival date/status label.
+- `docs/architecture.txt:14-18` labels credibility evolution “proposed,” while the current implementation summary later in the same file says it is accepted/current. Clarify which formula is implemented and which remains proposal.
+- `llm/README.txt` points to `/workspace/agent-state/reference/style.md` and `visual-references.md`; both files exist in this workspace. These are machine-local links, so the README should identify that dependency for other checkouts.
+
+These are audit findings only; no policy or implementation decisions were made. Exact locations and current test outcomes are recorded here so Sol can resolve wording without reopening the source scan.
 
 ### General assessment
 

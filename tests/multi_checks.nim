@@ -1,3 +1,4 @@
+## Test map: deterministic delay/jitter/loss; four-peer state convergence and motion.
 import std/[tables, math]
 import ../src/[p2p, sync]
 from blastd import nil
@@ -7,6 +8,7 @@ type Entity = object
   id : Uid
   pos: sync_v2
 
+# Delivery time, ordering and loss behavior of the test-only loopback adapter.
 block gatewayTiming:
   var g = initGateway(100, 0, 0, 1)
   let e = Event(event: data, source: PeerInfo(id: 1))

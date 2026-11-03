@@ -1,3 +1,4 @@
+## Test map: weighted aggregation; reliability interpolation; trust blending and decay.
 import std/math
 import ../src/trust
 

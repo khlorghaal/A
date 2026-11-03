@@ -1,3 +1,4 @@
+## Test map: roundtrip/empty snapshots; malformed schema, IDs, values and limits.
 import std/[tables, math]
 import ../src/gateway_snapshot
 

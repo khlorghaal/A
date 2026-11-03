@@ -1,3 +1,4 @@
+## Test map: codec/local fields; owner weighting; report age/TTL; kinetic projection.
 import std/[tables, math]
 import ../src/[p2p, sync]
 from blastd import nil
@@ -89,6 +90,7 @@ block ownerCredibility:
   invalid.reconcile(policy, unchanged, Seconds(0.1))
   doAssert unchanged[0].pos == (0'f32, 0'f32)
 
+# Sender age advances with each new tick; duplicate or older revisions must not reset it.
 block senderAge:
   var age = 0.0
   let send = sendDatum
@@ -98,6 +100,59 @@ block senderAge:
   left.tick(Seconds(0.025))
   doAssert abs(age - 0.1) < 0.000001
   sendDatum = send
+
+block staleRevisionDoesNotRenew:
+  var sourceNet = network(1, 2)
+  var targetNet = network(2, 1)
+  var sourceSync = initSync(sourceNet, 20)
+  var targetSync = initSync(targetNet, 21)
+  targetSync.ttl = Seconds(0.2)
+  targetSync.horizon = Seconds(1)
+  var source = @[Entity(id: id, pos: (10, 0))]
+  var local = @[Entity(id: id)]
+  sourceSync.publish(source)
+  targetSync.publish(local)
+  var report = sourceSync.kind.row[0]
+  report.revision = 2
+  targetSync.kind.queue.add (1'u64, report)
+  targetSync.reconcile(targetNet, local, Seconds(0.1))
+
+  report.revision = 1
+  targetSync.kind.queue.add (1'u64, report)
+  targetSync.reconcile(targetNet, local, Seconds(0.09))
+  let beforeExpiry = local[0].pos
+  targetSync.reconcile(targetNet, local, Seconds(0.12))
+  doAssert local[0].pos == beforeExpiry
+
+block malformedBooleanDoesNotConsumeRevision:
+  type FlagEntity = object
+    id: Uid
+    flag: sync_b
+  let flagId: Uid = (31'u64, 47'u64)
+  var sourceNet = network(1, 2)
+  var targetNet = network(2, 1)
+  targetNet.positionTrust = proc(p: Peer, bonus: float32): float32 = 1
+  var sourceSync = initSync(sourceNet, 22)
+  var targetSync = initSync(targetNet, 23)
+  targetSync.rate = 100
+  var source = @[FlagEntity(id: flagId)]
+  source[0].flag.set(true)
+  var local = @[FlagEntity(id: flagId)]
+  sourceSync.publish(source)
+  targetSync.publish(local)
+
+  var malformed = sourceSync.kind.row[0]
+  malformed.revision = 2
+  malformed.bytes[^1] = 2
+  targetSync.kind.queue.add (1'u64, malformed)
+  targetSync.reconcile(targetNet, local, Seconds(0.1))
+  doAssert not local[0].flag.state
+
+  var corrected = sourceSync.kind.row[0]
+  corrected.revision = malformed.revision
+  targetSync.kind.queue.add (1'u64, corrected)
+  targetSync.reconcile(targetNet, local, Seconds(0.1))
+  doAssert local[0].flag.state
 
 proc trajectory(steps: int, owner: PeerId, trust: float32,
                 duplicates = 1): float32 =

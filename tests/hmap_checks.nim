@@ -1,3 +1,4 @@
+## Test map: missing/present/nil distinction; expansion, overwrite, delete and clear.
 import ../src/hmap
 
 var m = initHMap[int32, string](1)

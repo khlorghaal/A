@@ -1,3 +1,4 @@
+## Test map: report revisions/roles; persistence/migration; tombstones/quotas; dispatch.
 import std/[tables, math, os, options, json]
 import ../src/gateway_snapshot
 import ../src/gateway
@@ -32,6 +33,7 @@ try:
 except ValueError: discard
 echo "gateway report state checks passed"
 
+# Save failures preserve committed bytes; restart restores data, not live sessions.
 block persistence:
   let path = getTempDir() / ("a-gateway-" & $getCurrentProcessId())
   if dirExists(path): removeDir(path)
@@ -111,6 +113,7 @@ block quotas:
   except ValueError: discard
   doAssert state.snapshot(weights).len == 1
 
+# Snapshot access and report authority remain distinct at dispatch boundary.
 block operationDispatch:
   var state: Gateway
   state.setParagons(["a"])

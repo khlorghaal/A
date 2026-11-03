@@ -1,3 +1,4 @@
+## Test map: fixed hash vectors; signed-width equivalence; zero-seed random values.
 import ../src/doot_hash
 
 doAssert dootHash(0'u32) == 0'u32

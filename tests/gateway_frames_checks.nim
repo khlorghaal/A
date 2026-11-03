@@ -1,3 +1,4 @@
+## Test map: split/coalesced and bytewise frames; binary/empty bodies; EOF and limits.
 import ../src/gateway_frames
 
 let wire = frame("hello\0world", 32) & frame("", 32) & frame("last", 32)
@@ -9,6 +10,7 @@ for split in 0..wire.len:
   r.feed(wire[split..<wire.len], take)
   r.finish()
   doAssert got == @["hello\0world", "", "last"]
+# Fragmentation boundaries include every possible two-chunk split.
 block bytewise:
   var r = initFrameReader(32)
   var got: seq[string]

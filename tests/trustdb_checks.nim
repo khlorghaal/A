@@ -1,3 +1,4 @@
+## Test map: writer lease; framed sync; migration/NFC; bounds, bootstrap and atomic saves.
 import std/[os, tables, times, math, osproc]
 import ../src/[trustdb, identity]
 import ../src/[gateway_frames, gateway_snapshot]
@@ -12,6 +13,7 @@ if paramCount() == 2 and paramStr(1) in ["--try-lock", "--hold-lock"]:
     quit(0)
   except OSError: quit(3)
 
+# Process-level locking and recovery after owner exit.
 block writerOwnership:
   let path = getTempDir() / ("a-ownership-" & $getCurrentProcessId())
   if dirExists(path): removeDir(path)
@@ -43,6 +45,7 @@ block writerOwnership:
   let recovered = acquireLock(file) # lock file remains; kernel ownership gone
   recovered.release()
 
+# Complete snapshot replacement, framing and commit-before-publish behavior.
 block framedManualSync:
   let path = getTempDir() / ("a-framed-sync-" & $getCurrentProcessId())
   if dirExists(path): removeDir(path)

@@ -1,3 +1,4 @@
+## Test map: unit boundaries; witness dissemination; malformed/stale reports; trust hooks.
 import std/[tables, math]
 import ../src/[p2p, trustdb, trustsync]
 from blastd import nil
@@ -60,6 +61,7 @@ rx.kind.queue.add (1'u64, first)
 rx.receive(right)
 doAssert abs(rightDb[].swarm[("alice", "bob🙂")] - 0.2) < 0.00001
 
+# Invalid payloads, unknown sources, byte bounds and stale revisions.
 block malformedReports:
   let malformed = [
     "{",
@@ -98,6 +100,7 @@ doAssert abs(right.positionTrust(right.peers[1], 0) - 0.8) < 0.0001
 doAssert abs(right.positionTrust(right.peers[1], 0.3) - 0.82) < 0.0001
 echo "witness dissemination checks passed"
 
+# Watermark capacity and departed-source cleanup.
 block boundedWatermarks:
   var source = new TrustDb
   source[].setWitness("ship", 0.5)

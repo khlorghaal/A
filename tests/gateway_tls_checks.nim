@@ -1,3 +1,4 @@
+## Test map: TLS/framing deadlines; injected auth; stored report/snapshot roundtrip; preflight.
 import std/[os, osproc, net, asyncdispatch, asyncnet, options, json, tables]
 import ../src/gateway_frames
 import ../src/gateway_main
@@ -94,6 +95,7 @@ proc admission(certificate, key: string) {.async.} =
   let unused = listenGateway("127.0.0.1", Port(0), certificate, key)
   unused.close() # no run: context still released
 
+# Durable report acknowledgement and ordinary-client snapshot over real TLS.
 proc transactionTransport(certificate, key, path: string) {.async.} =
   var state: Gateway
   state.setParagons(["a"])
