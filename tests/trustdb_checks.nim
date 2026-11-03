@@ -30,6 +30,36 @@ block bootstrapPriors:
   restored.save(path)
   doAssert "a" in load(path).witnessed
 
+block manualSnapshots:
+  let path = getTempDir() / ("a-snapshot-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  defer: removeDir(path)
+  var db: TrustDb
+  db.setWitness("local", 0.7)
+  db.setParagon("obsolete", 0.9)
+  db.syncParagon({"fresh": 0.5'f32}.toTable, path)
+  doAssert "obsolete" notin db.paragon
+  doAssert abs(db.credibility("fresh") - 0.4) < 0.00001
+  doAssert db.witnessed["local"] == 0.7'f32
+  doAssert "fresh" notin db.witnessed
+  let before = readFile(path / "trust.toml")
+  try:
+    db.syncParagon({"bad": NaN.float32}.toTable, path)
+    doAssert false
+  except ValueError: discard
+  doAssert readFile(path / "trust.toml") == before
+  doAssert "fresh" in db.paragon
+  createDir(path / "trust.toml.tmp")
+  try:
+    db.syncParagon({"different": 0.2'f32}.toTable, path)
+    doAssert false
+  except IOError, OSError: discard
+  doAssert "fresh" in db.paragon and "different" notin db.paragon
+  removeDir(path / "trust.toml.tmp")
+  db.syncParagon(initTable[string, float32](), path)
+  doAssert db.paragon.len == 0
+  doAssert db.witnessed["local"] == 0.7'f32
+
 block transactions:
   let path = getTempDir() / ("a-transaction-" & $getCurrentProcessId())
   if dirExists(path): removeDir(path)

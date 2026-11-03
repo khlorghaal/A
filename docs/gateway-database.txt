@@ -7,6 +7,9 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ trustdb bootstrap priors persist separately; witness broadcasts omit prior-only W
+├─ syncParagon performs manual full replacement and commit-before-publish;
+│  gateway transport/authorization and snapshot wire schema still pending
 ├─ src/gateway_frames.nim: bounded four-byte big-endian length framing; opaque body
 │  └─ tests cover fragmented/coalesced input, empty/binary payload and truncated EOF
 ├─ src/trustdb.nim: NFC IDs, witnessed/paragon scalar stores, volatile swarm edges

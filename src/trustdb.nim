@@ -207,3 +207,19 @@ proc save*(db: TrustDb, directory: string) =
       raise newException(ValueError, "prior overlaps firsthand witness")
   createDir(directory)
   writeDb(directory / "trust.toml", db.witnessed, db.discredit, db.paragon, db.prior)
+
+proc syncParagon*(db: var TrustDb, snapshot: Table[string, float32],
+                  directory: string) =
+  ## Manual full replacement. Preserve local W and commit before publishing memory.
+  var staged = db
+  var replacement: Table[string, float32]
+  var subjects: seq[string]
+  for id, value in snapshot:
+    if checkedId(id, value) != id:
+      raise newException(ValueError, "noncanonical paragon snapshot ID")
+    replacement[id] = value
+    subjects.add id
+  staged.paragon = move(replacement)
+  staged.bootstrap(subjects)
+  staged.save(directory)
+  db = move(staged)
