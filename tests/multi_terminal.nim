@@ -2,6 +2,7 @@
 import std/[monotimes, net, os, osproc, streams, strutils, times]
 import posix
 import multi_observations
+import ../src/trustdb
 
 {.passL: "-lutil".}
 {.emit: """
@@ -132,7 +133,9 @@ proc scenario(latency, jitter: int, loss: float64, crash = false) =
       doAssert c.reaped, "client exit timeout"
       doAssert WIFEXITED(c.status) and WEXITSTATUS(c.status) == 0, "unclean client exit"
     for i in 1..4:
-      doAssert fileExists(tmpDir / "A" / ("testclient" & $i) / "trust_witnessed.toml")
+      let dbDir = tmpDir / "A" / ("testclient" & $i)
+      doAssert fileExists(dbDir / "trust.toml")
+      discard trustdb.load(dbDir)
     echo "4 clients: latency=", latency, " jitter=", jitter, " loss=", loss, ": passed"
   finally:
     for c in children.mitems:
