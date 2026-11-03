@@ -1,7 +1,8 @@
-import std/[os, osproc, net, asyncdispatch, asyncnet]
+import std/[os, osproc, net, asyncdispatch, asyncnet, options, json, tables]
 import ../src/gateway_frames
 import ../src/gateway_main
-from ../src/trustdb import acquireLock, release
+import ../src/trustdb
+import ../src/gateway_snapshot
 import ../src/gateway
 from std/openssl import SSL_CTX_ctrl
 proc exercise(certificate, key: string) {.async.} =
@@ -93,6 +94,59 @@ proc admission(certificate, key: string) {.async.} =
   let unused = listenGateway("127.0.0.1", Port(0), certificate, key)
   unused.close() # no run: context still released
 
+proc transactionTransport(certificate, key, path: string) {.async.} =
+  var state: Gateway
+  state.setParagons(["a"])
+  state.beginSession("a", 1)
+  let weights = proc(id: string): float32 = 0.4
+  let listener = listenGateway("127.0.0.1", Port(0), certificate, key)
+  var sequence = 0
+  var errors: seq[string]
+  let serving = listener.run(proc(): GatewayHandler =
+    # Test-only auth injection; no identity comes from request body or endpoint.
+    let principal = if sequence == 0: GatewaySession(playerId: "a", epoch: 1)
+                    else: GatewaySession(playerId: "ordinary", epoch: 2)
+    inc sequence
+    result = proc(body: string): string =
+      state.dispatchStored(some(principal), body, path / "gateway", weights),
+    proc(message: string) = errors.add message)
+  let context = newContext(verifyMode = CVerifyPeer, caFile = certificate)
+  defer: context.destroyContext()
+  proc request(payload: string): Future[string] {.async.} =
+    let client = newAsyncSocket(buffered = false)
+    defer: client.close()
+    await client.connect("127.0.0.1", listener.port)
+    context.wrapConnectedSocket(client, handshakeAsClient, hostname = "localhost")
+    await client.send(frame(payload, 65536))
+    var reply: string
+    var complete = false
+    var reader = initFrameReader(65536)
+    while not complete:
+      let incoming = client.recv(4096)
+      doAssert await withTimeout(incoming, 2000)
+      let chunk = await incoming
+      doAssert chunk.len > 0
+      reader.feed(chunk, proc(body: string) =
+        reply = body
+        complete = true)
+    return reply
+  try:
+    let report = "{\"version\":1,\"operation\":\"report\",\"subject\":\"ship\",\"revision\":\"1\",\"value\":0.5}"
+    doAssert parseJson(await request(report))["accepted"].getBool
+    doAssert abs(loadGateway(path / "gateway").snapshot(weights)["ship"] - 0.2) < 0.00001
+    let snapshot = await request("{\"version\":1,\"operation\":\"snapshot\"}")
+    var peer: TrustDb
+    peer.setWitness("local", 0.7)
+    peer.syncParagon(decodeSnapshot(snapshot, 65536, 4096), path / "peer")
+    let restored = trustdb.load(path / "peer")
+    doAssert abs(restored.credibility("ship") - 0.16) < 0.00001
+    doAssert "ship" notin restored.witnessed
+    doAssert restored.witnessed["local"] == 0.7'f32
+  finally:
+    listener.close()
+    doAssert await withTimeout(serving, 2000)
+    await serving
+
 block configuration:
   let path = getTempDir() / ("a-gateway-tls-" & $getCurrentProcessId())
   if dirExists(path): removeDir(path)
@@ -132,6 +186,7 @@ block configuration:
   ctx.destroyContext()
   waitFor exercise(certificate, key)
   waitFor admission(certificate, key)
+  waitFor transactionTransport(certificate, key, path / "transaction")
   for paths in [("", key), (certificate, ""), (certificate, path / "missing")]:
     var rejected = false
     try:

@@ -1,5 +1,6 @@
 ## Gateway report state. Host supplies authenticated sessions and credibility policy.
-import std/[tables, sets, math, json, os, strutils]
+import std/[tables, sets, math, json, os, strutils, options]
+import gateway_snapshot
 from trustdb import writeAtomic
 import identity
 
@@ -75,6 +76,51 @@ proc snapshot*(g: Gateway, credibility: proc(id: string): float32): Table[string
     inc totals[key.subject].count
   for subject, total in totals: result[subject] = float32(total.sum / float64(total.count))
 
+type GatewaySession* = object
+  playerId*: string
+  epoch*: uint64
+
+proc dispatch*(g: var Gateway, session: Option[GatewaySession], payload: string,
+               credibility: proc(id: string): float32,
+               maxBytes = 65536, maxEntries = 4096): string =
+  ## Session originates from host auth, never request fields. Schema provisional.
+  if session.isNone: raise newException(ValueError, "authentication required")
+  let principal = session.get
+  if playerId(principal.playerId) != principal.playerId:
+    raise newException(ValueError, "invalid authenticated player ID")
+  if maxBytes <= 0 or payload.len > maxBytes:
+    raise newException(ValueError, "request exceeds limit")
+  let request = parseJson(payload)
+  if request.kind != JObject or not request.hasKey("version") or
+     request["version"].kind != JInt or request["version"].getInt != 1 or
+     not request.hasKey("operation") or request["operation"].kind != JString:
+    raise newException(ValueError, "invalid gateway request")
+  let operation = request["operation"].getStr
+  if operation == "snapshot":
+    if request.len != 2: raise newException(ValueError, "invalid snapshot request")
+    return encodeSnapshot(g.snapshot(credibility), maxBytes, maxEntries)
+  if operation notin ["report", "delete"] or principal.playerId notin g.paragons:
+    raise newException(ValueError, "report channel unavailable")
+  let deleted = operation == "delete"
+  if request.len != (if deleted: 4 else: 5) or not request.hasKey("subject") or
+     request["subject"].kind != JString or not request.hasKey("revision") or
+     request["revision"].kind != JString:
+    raise newException(ValueError, "invalid report request")
+  let serial = request["revision"].getStr
+  if serial.len == 0: raise newException(ValueError, "invalid report revision")
+  for c in serial:
+    if c notin {'0'..'9'}: raise newException(ValueError, "invalid report revision")
+  var value = 0.0
+  if not deleted:
+    if not request.hasKey("value") or request["value"].kind notin {JInt, JFloat}:
+      raise newException(ValueError, "invalid report value")
+    value = request["value"].getFloat
+    if classify(value) in {fcNan, fcInf, fcNegInf} or value < 0 or value > 1:
+      raise newException(ValueError, "invalid report value")
+  let accepted = g.receive(principal.playerId, request["subject"].getStr,
+    principal.epoch, parseBiggestUInt(serial), float32(value), deleted)
+  $(%*{"version": 1, "accepted": accepted})
+
 # Storage keeps role/report provenance; authenticated sessions never persist.
 
 proc save*(g: Gateway, directory: string, maxBytes = 16*1024*1024) =
@@ -88,6 +134,17 @@ proc save*(g: Gateway, directory: string, maxBytes = 16*1024*1024) =
     raise newException(ValueError, "gateway state exceeds limit")
   createDir(directory)
   writeAtomic(directory / "gateway.json", payload)
+
+proc dispatchStored*(g: var Gateway, session: Option[GatewaySession], payload: string,
+                     directory: string, credibility: proc(id: string): float32,
+                     maxBytes = 65536, maxEntries = 4096): string =
+  ## Publish accepted update only after durable save. Snapshot requests remain read-only.
+  var staged = g
+  result = staged.dispatch(session, payload, credibility, maxBytes, maxEntries)
+  let reply = parseJson(result)
+  if reply.hasKey("accepted") and reply["accepted"].getBool:
+    staged.save(directory)
+    g = move(staged)
 
 proc loadGateway*(directory: string, maxBytes = 16*1024*1024,
                   maxReports = 65536): Gateway =

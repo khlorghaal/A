@@ -7,6 +7,11 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ versioned operation dispatch accepts host-provided authenticated session only
+│  ├─ snapshot allowed for ordinary authenticated users; report/delete require current role
+│  ├─ body cannot supply reporter/session identity; role checked on every operation
+│  └─ dispatchStored saves accepted changes before ack; failed staging preserves memory
+│     TLS integration test covers report commit, ordinary snapshot fetch and peer sync
 ├─ src/gateway_main.nim: standalone preflight; validates TLS/config/database lease
 │  └─ make gateway builds executable; live mode exits 2 before opening listener
 ├─ gateway report deletion uses revisioned tombstones; excluded from aggregation

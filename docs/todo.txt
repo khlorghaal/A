@@ -1,11 +1,10 @@
 gateway
-  free: operation dispatch tests with injected authenticated role/session; no login implementation
   draft/pseudocode: docs/gateway-database.txt
   settle paragon visibility and gateway reporter-weight inputs
   manual paragon DB sync transport; snapshot access separate from paragon-only report channel
   gateway STCP: TLS over TCP
   live gateway assembly; standalone preflight build exists, no game logic
-  only paragons contact the gateway after signin
+  only paragons keep report channel after signin; manual snapshot request exception
   gateway uses TLS over TCP
 
 dbs
