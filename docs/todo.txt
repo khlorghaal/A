@@ -1,4 +1,6 @@
 gateway
+  free: standalone build/config checks; keep production auth fail-closed
+  free: operation dispatch tests with injected authenticated role/session; no login implementation
   draft/pseudocode: docs/gateway-database.txt
   settle paragon visibility and gateway reporter-weight inputs
   manual paragon DB sync transport; snapshot access separate from paragon-only report channel
@@ -8,6 +10,7 @@ gateway
   gateway uses TLS over TCP
 
 dbs
+  free: enforce single-writer ownership around existing atomic state replacement
   retention/deletion and account storage; trust/report stores now use single-file transactions
 	peers each keep db/[ trust_witnesssd trust_paragon friends ]
 	peers paragon list is locally volatile, gateway sends it each time. friends are simply appended to paragons.
