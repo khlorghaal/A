@@ -73,7 +73,8 @@ proc receive*(s: var TrustSync, n: Net) =
       continue
   s.kind.queue.setLen(0)
 
-proc attachPositionPolicy*(s: TrustSync, n: var Net, unknownReliability = 0'f32) =
+proc attachPositionPolicy*(s: TrustSync, n: var Net,
+                           unknownReliability = 0'f32) =
   ## Until a ping is measured, the caller chooses the local reliability fallback.
   if classify(unknownReliability) in {fcNan, fcInf, fcNegInf} or
      unknownReliability < 0 or unknownReliability > 1:
@@ -82,10 +83,12 @@ proc attachPositionPolicy*(s: TrustSync, n: var Net, unknownReliability = 0'f32)
   n.positionTrust = proc(p: Peer, credibilityBonus: float32): float32 =
     let r = if int64(p.ping) < 0: unknownReliability
             else: reliability(float32(int64(p.ping)))
-    let cred = if p.info.playerId.len == 0: 0'f32 else: db[].credibility(p.info.playerId)
+    let cred = if p.info.playerId.len == 0: 0'f32
+               else: db[].credibility(p.info.playerId)
     positionTrust(cred + credibilityBonus, r)
   n.recordDesync = proc(p: Peer, severity: float32) =
-    if p.info.playerId.len > 0: db[].desync(p.info.playerId, clamp(severity, 0'f32, 1'f32))
+    if p.info.playerId.len > 0:
+      db[].desync(p.info.playerId, clamp(severity, 0'f32, 1'f32))
 
 proc step*(s: var TrustSync, n: Net, dt: float32) =
   s.receive(n)

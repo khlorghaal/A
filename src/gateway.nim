@@ -6,13 +6,13 @@ import identity
 
 type
   GatewayReport* = object
-    value*: float32
+    value*   : float32
     revision*: uint64
-    deleted*: bool
+    deleted* : bool
   Gateway* = object
-    paragons: HashSet[string]
-    sessions: Table[string, uint64]
-    reports: Table[tuple[reporter, subject: string], GatewayReport]
+    paragons   : HashSet[string]
+    sessions   : Table[string, uint64]
+    reports    : Table[tuple[reporter, subject: string], GatewayReport]
     reportLimit: int
 
 proc initGateway*(maxReports = 65536): Gateway =
@@ -60,7 +60,8 @@ proc receive*(g: var Gateway, reporter, subject: string,
   g.reports[key] = GatewayReport(value: value, revision: revision, deleted: deleted)
   true
 
-proc snapshot*(g: Gateway, credibility: proc(id: string): float32): Table[string, float32] =
+proc snapshot*(g: Gateway,
+               credibility: proc(id: string): float32): Table[string, float32] =
   ## Caller supplies one immutable previous-score view for entire aggregation step.
   if credibility.isNil: raise newException(ValueError, "missing reporter weights")
   var weights: Table[string, float32]
@@ -72,13 +73,15 @@ proc snapshot*(g: Gateway, credibility: proc(id: string): float32): Table[string
       if classify(weight) in {fcNan, fcInf, fcNegInf} or weight < 0 or weight > 1:
         raise newException(ValueError, "invalid reporter weight")
       weights[key.reporter] = weight
-    totals.mgetOrPut(key.subject, (0.0, 0)).sum += float64(weights[key.reporter])*float64(report.value)
+    totals.mgetOrPut(key.subject, (0.0, 0)).sum +=
+      float64(weights[key.reporter])*float64(report.value)
     inc totals[key.subject].count
-  for subject, total in totals: result[subject] = float32(total.sum / float64(total.count))
+  for subject, total in totals:
+    result[subject] = float32(total.sum / float64(total.count))
 
 type GatewaySession* = object
   playerId*: string
-  epoch*: uint64
+  epoch*   : uint64
 
 proc dispatch*(g: var Gateway, session: Option[GatewaySession], payload: string,
                credibility: proc(id: string): float32,
@@ -117,7 +120,8 @@ proc dispatch*(g: var Gateway, session: Option[GatewaySession], payload: string,
     value = request["value"].getFloat
     if classify(value) in {fcNan, fcInf, fcNegInf} or value < 0 or value > 1:
       raise newException(ValueError, "invalid report value")
-  let accepted = g.receive(principal.playerId, request["subject"].getStr,
+  let accepted = g.receive(
+    principal.playerId, request["subject"].getStr,
     principal.epoch, parseBiggestUInt(serial), float32(value), deleted)
   $(%*{"version": 1, "accepted": accepted})
 
@@ -169,8 +173,9 @@ proc loadGateway*(directory: string, maxBytes = 16*1024*1024,
       raise newException(ValueError, "duplicate or noncanonical paragon")
     result.paragons.incl id
   for row in root["reports"]:
-    if row.kind != JArray or row.len != (if version == 1: 4 else: 5) or row[0].kind != JString or
-       row[1].kind != JString or row[2].kind notin {JInt, JFloat} or row[3].kind != JString:
+    if row.kind != JArray or row.len != (if version == 1: 4 else: 5) or
+       row[0].kind != JString or row[1].kind != JString or
+       row[2].kind notin {JInt, JFloat} or row[3].kind != JString:
       raise newException(ValueError, "invalid gateway report")
     if version == 2 and row[4].kind != JBool:
       raise newException(ValueError, "invalid report tombstone")
@@ -187,9 +192,9 @@ proc loadGateway*(directory: string, maxBytes = 16*1024*1024,
       raise newException(ValueError, "invalid gateway provenance/value")
     for c in serial:
       if c notin {'0'..'9'}: raise newException(ValueError, "invalid gateway revision")
-    result.reports[(reporter, subject)] = GatewayReport(value: float32(value),
-                                                       revision: parseBiggestUInt(serial),
-                                                       deleted: version == 2 and row[4].getBool)
+    result.reports[(reporter, subject)] = GatewayReport(
+      value: float32(value), revision: parseBiggestUInt(serial),
+      deleted: version == 2 and row[4].getBool)
 
 when defined(ssl):
   import std/[net, asyncdispatch, asyncnet, monotimes, times]
@@ -253,9 +258,10 @@ when defined(ssl):
     GatewayHandler* = proc(payload: string): string
     GatewayListener* = ref object
       listener: AsyncSocket
-      context: SslContext
-      clients: seq[AsyncSocket]
-      tasks: seq[Future[void]]
+      context : SslContext
+      clients : seq[AsyncSocket]
+      tasks   : seq[Future[void]]
+
       stopped, started: bool
       limit, maxFrame, timeoutMs: int
 
@@ -282,8 +288,9 @@ when defined(ssl):
       socket.close()
       context.destroyContext()
       raise
-    GatewayListener(listener: socket, context: context, limit: maxConnections,
-                    maxFrame: maxFrame, timeoutMs: timeoutMs)
+    GatewayListener(
+      listener: socket, context: context, limit: maxConnections,
+      maxFrame: maxFrame, timeoutMs: timeoutMs)
 
   proc port*(g: GatewayListener): Port = g.listener.getLocalAddr()[1]
 

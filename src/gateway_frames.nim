@@ -1,11 +1,11 @@
 ## Four-byte big-endian length followed by opaque payload; host owns TLS and auth.
 type FrameReader* = object
-  limit: int
-  header: uint32
+  limit      : int
+  header     : uint32
   headerBytes: int
-  remaining: int
-  body: string
-  failed: bool
+  remaining  : int
+  body       : string
+  failed     : bool
 
 proc initFrameReader*(limit: int): FrameReader =
   if limit <= 0 or uint64(limit) > uint64(high(uint32)):

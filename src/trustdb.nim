@@ -7,9 +7,9 @@ when defined(posix):
 
 type
   TrustDb* = object
-    witnessed*, paragon*: Table[string, float32]
-    swarm*              : Table[tuple[reporter, subject: string], float32]
-    maxSwarmReports*    : int # zero selects default 65536; host may lower quota
+    witnessed*, paragon*   : Table[string, float32]
+    swarm*                 : Table[tuple[reporter, subject: string], float32]
+    maxSwarmReports*       : int # zero selects default 65536; host may lower quota
     scores, discredit, prior: Table[string, float32]
 
 func validValue(x: float32): bool =
@@ -59,17 +59,21 @@ proc refresh*(db: var TrustDb) =
       raise newException(ValueError, "noncanonical player ID")
     subjects.incl edge.reporter
     subjects.incl edge.subject
+
   var totals: Table[string, tuple[sum: float32, count: int]]
   for edge, v in db.swarm:
     totals.mgetOrPut(edge.subject, (0'f32, 0)).sum +=
       db.scores.getOrDefault(edge.reporter) * v
     inc totals[edge.subject].count
+
   var next: Table[string, float32]
   for subject in subjects:
     let t = totals.getOrDefault(subject)
     let swarm = if t.count == 0: 0'f32 else: t.sum / float32(t.count)
-    next[subject] = combined(db.witnessed.getOrDefault(subject, db.prior.getOrDefault(subject)),
-                             db.paragon.getOrDefault(subject), swarm)
+    next[subject] = combined(
+      db.witnessed.getOrDefault(subject, db.prior.getOrDefault(subject)),
+      db.paragon.getOrDefault(subject), swarm)
+
   db.scores = next
 
 proc bootstrap*(db: var TrustDb, subjects: openArray[string]) =
@@ -90,8 +94,9 @@ proc bootstrap*(db: var TrustDb, subjects: openArray[string]) =
 proc desync*(db: var TrustDb, id: string, severity: float32) =
   ## Severity is per discrepancy; packet-independent values need their own rule.
   let id = checkedId(id, severity)
-  var c = Credibility(value: db.witnessed.getOrDefault(id, db.prior.getOrDefault(id)),
-                      discredit: db.discredit.getOrDefault(id))
+  var c = Credibility(
+    value: db.witnessed.getOrDefault(id, db.prior.getOrDefault(id)),
+    discredit: db.discredit.getOrDefault(id))
   c.desync(severity)
   db.setWitness(id, c.value)
   db.discredit[id] = c.discredit
@@ -133,10 +138,10 @@ proc readDb(path: string, witnessed = false, unified = false):
       if normalized in values:
         raise newException(ValueError, "duplicate normalized player ID in " & path)
       values[normalized] = value
-    if name == "trust": result.trust      = move(values)
-    elif name == "paragon": result.paragon = move(values)
-    elif name == "prior": result.prior = move(values)
-    else:               result.discredit = move(values)
+    if name == "trust":     result.trust     = move(values)
+    elif name == "paragon": result.paragon   = move(values)
+    elif name == "prior":   result.prior     = move(values)
+    else:                   result.discredit = move(values)
 
 type DatabaseLock* = ref object
   fd: cint
@@ -147,7 +152,9 @@ when defined(posix):
 proc acquireLock*(path: string): DatabaseLock =
   ## Advisory lock; file remains, kernel releases ownership on close/process exit.
   when defined(posix):
-    let fd = posix.open(path.cstring, posix.O_CREAT or posix.O_RDWR or posix.O_CLOEXEC, posix.Mode(0o600))
+    let fd = posix.open(
+      path.cstring, posix.O_CREAT or posix.O_RDWR or posix.O_CLOEXEC,
+      posix.Mode(0o600))
     if fd < 0: raiseOSError(osLastError())
     if flock(fd, 2 or 4) != 0: # LOCK_EX | LOCK_NB
       let error = osLastError()
@@ -185,15 +192,16 @@ proc writeAtomic*(path, data: string) =
 proc writeDb(path: string, values: Table[string, float32],
              discredit, paragon, prior: Table[string, float32]) =
   let root = Toml_v100.decode("[trust]\n[discredit]\n[paragon]\n[prior]\n", TomlValueRef)
-  for (name, data) in [("trust", values), ("discredit", discredit), ("paragon", paragon), ("prior", prior)]:
+  for (name, data) in [("trust", values), ("discredit", discredit),
+                       ("paragon", paragon), ("prior", prior)]:
     if name notin root.tableVal: continue
     let section = root.tableVal[name]
     for id, value in data:
       let normalized = checkedId(id, value)
       if normalized in section.tableVal:
         raise newException(ValueError, "duplicate normalized player ID in " & path)
-      section.tableVal[normalized] = TomlValueRef(kind: TomlKind.Float,
-                                                 floatVal: value.float64)
+      section.tableVal[normalized] = TomlValueRef(
+        kind: TomlKind.Float, floatVal: value.float64)
   # The library emits non-TOML 1.0 escapes for ESC and apostrophe.
   let encoded = Toml_v100.encode(root)
   var data = ""
@@ -212,8 +220,9 @@ proc writeDb(path: string, values: Table[string, float32],
 
 proc load*(directory: string): TrustDb =
   let unified = fileExists(directory / "trust.toml")
-  let witnessed = if unified: readDb(directory / "trust.toml", witnessed = true, unified = true)
-                  else: readDb(directory / "trust_witnessed.toml", witnessed = true)
+  let witnessed =
+    if unified: readDb(directory / "trust.toml", witnessed = true, unified = true)
+    else: readDb(directory / "trust_witnessed.toml", witnessed = true)
   result.witnessed = witnessed.trust
   result.discredit = witnessed.discredit
   result.prior = witnessed.prior
