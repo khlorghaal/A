@@ -28,6 +28,9 @@ current code
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway
 
 Trust persistence
+├─ bootstrap(subjects) seeds prior W from mean P (empty fallback .5), missing P=.5
+│  ├─ prior persists separately; combined uses prior only without firsthand W
+│  └─ actual witness/desync replaces prior; broadcasts contain firsthand records only
 ├─ toml_serialization reads through a file input stream and writes TOML 1.0; IDs are normalized and validated
 └─ trust.toml persists witnessed, discredit and paragon tables in one replacement;
    POSIX fsync covers file/directory; legacy two-file stores migrate on save

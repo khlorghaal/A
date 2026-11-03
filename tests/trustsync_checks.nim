@@ -15,6 +15,7 @@ try:
 except ValueError: discard
 
 var leftDb = new TrustDb
+leftDb[].bootstrap(["prior-only"])
 leftDb[].setWitness("bob🙂", 0.8)
 leftDb[].setSwarm("other", "secret", 0.4)
 var rightDb = new TrustDb
@@ -26,6 +27,7 @@ var right = initNet(PeerInfo(id: 2, playerId: "carol"), 2)
 var tx = initTrustSync(left, 4, leftDb)
 var rx = initTrustSync(right, 4, rightDb)
 tx.publish()
+doAssert tx.kind.row.len == 1 # bootstrap prior must not masquerade as firsthand report
 right.peers[1] = Peer(info: left.selph, trust: 0.5, up: (0'f32, 1'f32))
 right.all = @[right.peers[1]]
 right.near = right.all

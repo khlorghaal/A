@@ -1,6 +1,35 @@
 import std/[os, tables, times, math]
 import ../src/[trustdb, identity]
 
+block bootstrapPriors:
+  var db: TrustDb
+  db.bootstrap(["new"])
+  doAssert abs(db.credibility("new") - 0.4) < 0.00001
+  doAssert db.witnessed.len == 0 and db.swarm.len == 0
+  db.setParagon("new", 0.9)
+  db.bootstrap(["new"])
+  doAssert abs(db.credibility("new") - 0.56) < 0.00001 # retain original W=.5
+  db.setWitness("new", 0.2)
+  db.bootstrap(["new"])
+  doAssert abs(db.credibility("new") - 0.44) < 0.00001
+  var varied: TrustDb
+  varied.setParagon("a", 0.2)
+  varied.setParagon("b", 0.8)
+  varied.bootstrap(["a", "b"])
+  doAssert abs(varied.credibility("a") - 0.28) < 0.00001
+  doAssert abs(varied.credibility("b") - 0.52) < 0.00001
+  let path = getTempDir() / ("a-priors-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  defer: removeDir(path)
+  varied.save(path)
+  var restored = load(path)
+  doAssert restored.witnessed.len == 0
+  doAssert abs(restored.credibility("a") - 0.28) < 0.00001
+  restored.desync("a", 0.5)
+  doAssert abs(restored.witnessed["a"] - 0.5) < 0.00001
+  restored.save(path)
+  doAssert "a" in load(path).witnessed
+
 block transactions:
   let path = getTempDir() / ("a-transaction-" & $getCurrentProcessId())
   if dirExists(path): removeDir(path)

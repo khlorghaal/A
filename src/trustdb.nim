@@ -9,7 +9,7 @@ type
   TrustDb* = object
     witnessed*, paragon*: Table[string, float32]
     swarm*              : Table[tuple[reporter, subject: string], float32]
-    scores, discredit   : Table[string, float32]
+    scores, discredit, prior: Table[string, float32]
 
 func validValue(x: float32): bool =
   classify(x) notin {fcNan, fcInf, fcNegInf} and x >= 0 and x <= 1
@@ -20,7 +20,9 @@ proc checkedId(id: string, value: float32): string =
     raise newException(ValueError, "invalid credibility")
 
 proc setWitness*(db: var TrustDb, id: string, value: float32) =
-  db.witnessed[checkedId(id, value)] = value
+  let id = checkedId(id, value)
+  db.witnessed[id] = value
+  db.prior.del(id)
 
 proc setParagon*(db: var TrustDb, id: string, value: float32) =
   db.paragon[checkedId(id, value)] = value
@@ -36,6 +38,10 @@ proc credibility*(db: TrustDb, subject: string): float32 =
 proc refresh*(db: var TrustDb) =
   ## One simultaneous step uses the previous combined scores for reporters.
   var subjects: HashSet[string]
+  for id, v in db.prior:
+    if checkedId(id, v) != id or id in db.witnessed:
+      raise newException(ValueError, "invalid bootstrap prior")
+    subjects.incl id
   for id, v in db.witnessed:
     if checkedId(id, v) != id: raise newException(ValueError, "noncanonical player ID")
     subjects.incl id
@@ -57,17 +63,32 @@ proc refresh*(db: var TrustDb) =
   for subject in subjects:
     let t = totals.getOrDefault(subject)
     let swarm = if t.count == 0: 0'f32 else: t.sum / float32(t.count)
-    next[subject] = combined(db.witnessed.getOrDefault(subject),
+    next[subject] = combined(db.witnessed.getOrDefault(subject, db.prior.getOrDefault(subject)),
                              db.paragon.getOrDefault(subject), swarm)
   db.scores = next
+
+proc bootstrap*(db: var TrustDb, subjects: openArray[string]) =
+  ## Seed unseen subjects; prior is local initialization, never firsthand evidence.
+  var ids: seq[string]
+  for id in subjects: ids.add playerId(id)
+  var total = 0.0
+  for id, value in db.paragon:
+    if checkedId(id, value) != id: raise newException(ValueError, "noncanonical player ID")
+    total += float64(value)
+  let initial = if db.paragon.len == 0: 0.5'f32
+                else: float32(total / float64(db.paragon.len))
+  for id in ids:
+    if id notin db.paragon: db.paragon[id] = 0.5'f32
+    if id notin db.witnessed and id notin db.prior: db.prior[id] = initial
+  db.refresh()
 
 proc desync*(db: var TrustDb, id: string, severity: float32) =
   ## Severity is per discrepancy; packet-independent values need their own rule.
   let id = checkedId(id, severity)
-  var c = Credibility(value: db.witnessed.getOrDefault(id),
+  var c = Credibility(value: db.witnessed.getOrDefault(id, db.prior.getOrDefault(id)),
                       discredit: db.discredit.getOrDefault(id))
   c.desync(severity)
-  if id notin db.witnessed: db.witnessed[id] = c.value
+  db.setWitness(id, c.value)
   db.discredit[id] = c.discredit
 
 proc advance*(db: var TrustDb, dt: float32) =
@@ -82,7 +103,7 @@ proc advance*(db: var TrustDb, dt: float32) =
   db.refresh()
 
 proc readDb(path: string, witnessed = false, unified = false):
-    tuple[trust, discredit, paragon: Table[string, float32]] =
+    tuple[trust, discredit, paragon, prior: Table[string, float32]] =
   if not fileExists(path): return
   var root: TomlValueRef
   try: root = Toml_v100.loadFile(path, TomlValueRef)
@@ -93,7 +114,7 @@ proc readDb(path: string, witnessed = false, unified = false):
     raise newException(ValueError, "incomplete trust state: " & path)
   for name, section in root.tableVal:
     if name != "trust" and not (witnessed and name == "discredit") and
-       not (unified and name == "paragon"):
+       not (unified and name in ["paragon", "prior"]):
       raise newException(ValueError, "invalid trust TOML: " & path)
     if section.kind notin {TomlKind.Table, TomlKind.InlineTable}:
       raise newException(ValueError, "invalid trust TOML: " & path)
@@ -109,12 +130,13 @@ proc readDb(path: string, witnessed = false, unified = false):
       values[normalized] = value
     if name == "trust": result.trust      = move(values)
     elif name == "paragon": result.paragon = move(values)
+    elif name == "prior": result.prior = move(values)
     else:               result.discredit = move(values)
 
 proc writeDb(path: string, values: Table[string, float32],
-             discredit, paragon: Table[string, float32]) =
-  let root = Toml_v100.decode("[trust]\n[discredit]\n[paragon]\n", TomlValueRef)
-  for (name, data) in [("trust", values), ("discredit", discredit), ("paragon", paragon)]:
+             discredit, paragon, prior: Table[string, float32]) =
+  let root = Toml_v100.decode("[trust]\n[discredit]\n[paragon]\n[prior]\n", TomlValueRef)
+  for (name, data) in [("trust", values), ("discredit", discredit), ("paragon", paragon), ("prior", prior)]:
     if name notin root.tableVal: continue
     let section = root.tableVal[name]
     for id, value in data:
@@ -158,6 +180,7 @@ proc load*(directory: string): TrustDb =
                   else: readDb(directory / "trust_witnessed.toml", witnessed = true)
   result.witnessed = witnessed.trust
   result.discredit = witnessed.discredit
+  result.prior = witnessed.prior
   for id in result.discredit.keys:
     if id notin result.witnessed:
       raise newException(ValueError, "discredit without witnessed credibility")
@@ -167,7 +190,7 @@ proc load*(directory: string): TrustDb =
 
 proc save*(db: TrustDb, directory: string) =
   # Validate complete state before replacing live file.
-  for values in [db.witnessed, db.paragon, db.discredit]:
+  for values in [db.witnessed, db.paragon, db.discredit, db.prior]:
     var ids: HashSet[string]
     for id, value in values:
       let normalized = checkedId(id, value)
@@ -179,5 +202,8 @@ proc save*(db: TrustDb, directory: string) =
   for id in db.discredit.keys:
     if id notin witnesses:
       raise newException(ValueError, "discredit without witnessed credibility")
+  for id in db.prior.keys:
+    if playerId(id) in witnesses:
+      raise newException(ValueError, "prior overlaps firsthand witness")
   createDir(directory)
-  writeDb(directory / "trust.toml", db.witnessed, db.discredit, db.paragon)
+  writeDb(directory / "trust.toml", db.witnessed, db.discredit, db.paragon, db.prior)
