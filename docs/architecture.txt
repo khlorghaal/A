@@ -1,4 +1,9 @@
 architecture
+├─ client trust wiring
+│  ├─ shared TrustDb: load under writer lease, advance/exchange each frame, save on exit
+│  ├─ datakinds: ship=1, firsthand witness=2; bootstrap newly known player IDs once
+│  ├─ position/desync hooks use existing trust policy; auth mapping remains host-owned
+│  └─ test adapter supplies synthetic IDs/configured ping, not production authentication
 ├─ synchronization
 │  ├─ sync_k2 pairs position and velocity; integrate velocity without acceleration
 │  ├─ sample age advances received position by velocity × age, capped by a .25s horizon

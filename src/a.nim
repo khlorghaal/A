@@ -1,5 +1,5 @@
-import std/[monotimes, os, tables, math, strutils]
-import p2p, sync, trustdb
+import std/[monotimes, os, tables, math, strutils, sets]
+import p2p, sync, trustdb, trustsync
 import client
 when defined(simSockets):
   import ../tests/socket_gateway
@@ -22,6 +22,8 @@ const
   sec  = 1_000_000'i64
   tdt  = 25*msec
 
+  kindShip    = 1'u16
+  kindWitness = 2'u16
   etypShip  = 0b0001'u64
   shipMax   = 0xffffe
 
@@ -37,7 +39,7 @@ var
 
   localPeer    = getEnv("A_PEER_ID", "1").parseBiggestUInt.uint64
   net          = initNet(PeerInfo(id: localPeer), 1)
-  replication  = initSync(net, 1)
+  replication  = initSync(net, kindShip)
 
 template liveShips: untyped = ships.toOpenArray(0, shipsEnd - 1)
 
@@ -116,9 +118,12 @@ proc main(): int =
   createDir(dbDir)
   let ownership = acquireLock(dbDir / ".owner.lock")
   defer: ownership.release()
-  var db = trustdb.load(dbDir)
+  let db = new TrustDb
+  db[] = trustdb.load(dbDir)
+  var trustExchange = initTrustSync(net, kindWitness, db)
+  trustExchange.attachPositionPolicy(net)
   if not initScreen(): return 1
-  defer: db.save(dbDir)
+  defer: db[].save(dbDir)
   defer: discard tb_shutdown()
 
   initShips()
@@ -129,6 +134,7 @@ proc main(): int =
   t0 = nowUs()
   now = 0
   var previous = -tdt
+  var knownPlayers: HashSet[string]
 
   while true:
     let started = nowUs()
@@ -136,6 +142,13 @@ proc main(): int =
     previous = started
 
     if not gather.isNil: net.tick(dt)
+    var discovered: seq[string]
+    for p in net.all:
+      if p.info.playerId.len > 0 and p.info.playerId notin knownPlayers:
+        knownPlayers.incl p.info.playerId
+        discovered.add p.info.playerId
+    if discovered.len > 0: db[].bootstrap(discovered)
+    trustExchange.step(net, float32(float64(dt)))
     screenSize()
     var mouse: i2 = v(-1,-1)
     var ev: TbEvent

@@ -1,5 +1,5 @@
 ## Four terminal clients using the test-only loopback gateway (Linux/Unix).
-import std/[monotimes, net, os, osproc, streams, strutils, times]
+import std/[monotimes, net, os, osproc, streams, strutils, times, tables]
 import posix
 import multi_observations
 import ../src/trustdb
@@ -71,6 +71,9 @@ proc pump(children: var seq[Child], gateway: Process, seconds: float64) =
     sleep(20)
 
 proc scenario(latency, jitter: int, loss: float64, crash = false) =
+  let priorPing = getEnv("A_TEST_PING_MS")
+  putEnv("A_TEST_PING_MS", $(2*latency))
+  defer: putEnv("A_TEST_PING_MS", priorPing)
   const outDir = "build/multi"
   createDir(outDir)
   for i in 0..<4:
@@ -135,7 +138,12 @@ proc scenario(latency, jitter: int, loss: float64, crash = false) =
     for i in 1..4:
       let dbDir = tmpDir / "A" / ("testclient" & $i)
       doAssert fileExists(dbDir / "trust.toml")
-      discard trustdb.load(dbDir)
+      let saved = trustdb.load(dbDir)
+      doAssert saved.paragon.len == 3
+      doAssert saved.witnessed.len == 0 # synthetic bootstrap is not firsthand evidence
+      for peer in 1..4:
+        if peer != i:
+          doAssert abs(saved.credibility("test-peer-" & $peer) - 0.4) < 0.00001
     echo "4 clients: latency=", latency, " jitter=", jitter, " loss=", loss, ": passed"
   finally:
     for c in children.mitems:

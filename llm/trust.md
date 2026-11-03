@@ -1,6 +1,6 @@
 # Trust design
 
-The following is the author's specification, preserved verbatim. The trust modules now separate credibility and reliability; game integration remains pending.
+The following is the author's specification, preserved verbatim. The trust modules now separate credibility and reliability; client runs trust exchange and position policy; authenticated production transport remains pending.
 
 ```text
 credibility: of user credibility such as suspicious or highly disruptive desyncs
@@ -121,7 +121,7 @@ repeated updates replace an opinion instead of counting as additional votes.
 
 Missing entries contribute zero. Local persistence and witness dissemination exist
 in src/trustdb.nim and src/trustsync.nim; authenticated transport, gateway-supplied
-paragon data and game integration remain pending.
+paragon data via live gateway and authenticated production transport remain pending.
 
 ## Other and swarm
 

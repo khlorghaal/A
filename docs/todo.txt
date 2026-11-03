@@ -24,7 +24,7 @@ weight each paragon or swarm report by its reporter's combined credibility
 
 
 credibility and reliability
-	persistence, and witness propagation
+	production authenticated peer mapping and measured traffic; client trust hooks now wired
 	
 defer>>>
 

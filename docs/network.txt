@@ -1,6 +1,6 @@
 network
 ├─ gateway/database draft and pseudocode: docs/gateway-database.txt
-├─ trust modules (game integration pending)
+├─ client runs trust exchange and position policy; production authenticated transport pending
 │  ├─ credibility: user credibility, including disruptive desyncs
 │  ├─ reliability: locally measured network integrity
 │  ├─ position: .9 reliability + .1 credibility

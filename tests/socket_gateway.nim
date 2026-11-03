@@ -1,10 +1,10 @@
 # test-only coupling; loopback UDP carries simulated datagrams
-import std/[net, nativesockets, json, jsonutils, tables, monotimes]
+import std/[net, nativesockets, json, jsonutils, tables, monotimes, os, strutils]
 from std/posix import EAGAIN, EWOULDBLOCK
 import ../src/p2p
 from blastd import nil
 when isMainModule:
-  import std/[os, times, strutils]
+  import std/times
   import sim_socket
 
 proc packet(dst: PeerId, e: Event): string =
@@ -19,11 +19,12 @@ proc bindClient*(n: var Net, port: Port) =
   let socket = newSocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
   socket.bindAddr(Port(0), "127.0.0.1")
   socket.getFd.setBlocking(false)
+  n.selph.playerId = "test-peer-" & $n.selph.id
   let source = n.selph
   socket.sendTo("127.0.0.1", port, packet(0, Event(source: source)))
   for id in 1'u64..4'u64:
     if id == source.id: continue
-    let p = Peer(info: PeerInfo(id: id), trust: 0.5, up: (0'f32, 1'f32))
+    let p = Peer(info: PeerInfo(id: id, playerId: "test-peer-" & $id), trust: 0.5, up: (0'f32, 1'f32))
     n.peers[id] = p
     n.all.add p
     n.near.add p
@@ -40,7 +41,9 @@ proc bindClient*(n: var Net, port: Port) =
     socket.sendTo("127.0.0.1", port, packet(p.info.id,
       Event(event: data, source: source, kind: k.id, datum: d)))
   sendPeers = proc(p: Peer, peers: seq[PeerInfo]) = discard
-  traffic = proc(p: Peer) = discard
+  # Explicit fixture ping, not an Internet measurement or authentication claim.
+  let fixturePing = blastd.Milliseconds(getEnv("A_TEST_PING_MS", "0").parseBiggestInt)
+  traffic = proc(p: Peer) = p.ping = fixturePing
   p2p.accept = proc(p: Peer, k: Kind, d: Datum): bool = true
 
 when isMainModule:
