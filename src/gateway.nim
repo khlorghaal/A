@@ -114,3 +114,59 @@ proc loadGateway*(directory: string, maxBytes = 16*1024*1024): Gateway =
       if c notin {'0'..'9'}: raise newException(ValueError, "invalid gateway revision")
     result.reports[(reporter, subject)] = GatewayReport(value: float32(value),
                                                        revision: parseBiggestUInt(serial))
+
+when defined(ssl):
+  import std/[net, asyncdispatch, asyncnet, monotimes, times]
+  import gateway_frames
+  from std/openssl import SSL_CTX_ctrl
+
+  proc gatewayTls*(certificate, privateKey: string): SslContext =
+    ## TLS authenticates gateway; player authentication remains host responsibility.
+    if certificate.len == 0 or privateKey.len == 0:
+      raise newException(ValueError, "gateway certificate and key required")
+    result = newContext(verifyMode = CVerifyNone,
+                        certFile = certificate, keyFile = privateKey)
+    # OpenSSL ssl.h: SSL_CTRL_SET_MIN_PROTO_VERSION = 123, TLS1_2_VERSION = 0x0303.
+    if SSL_CTX_ctrl(result.context, 123, 0x0303, nil) != 1:
+      result.destroyContext()
+      raise newException(ValueError, "cannot require TLS 1.2 or newer")
+
+  proc serveConnection*(socket: AsyncSocket, context: SslContext,
+                        handle: proc(payload: string): string,
+                        maxFrame = 65536, timeoutMs = 5000) {.async.} =
+    ## Host owns admission/concurrency and auth handler. No callbacks before TLS.
+    ## Frame deadline spans partial reads; bounded output per request.
+    defer: socket.close()
+    if handle.isNil or timeoutMs <= 0:
+      raise newException(ValueError, "gateway handler and deadline required")
+    var reader = initFrameReader(maxFrame)
+    context.wrapConnectedSocket(socket, handshakeAsServer)
+    var started = getMonoTime()
+    while true:
+      let remaining = timeoutMs - int((getMonoTime() - started).inMilliseconds)
+      if remaining <= 0: raise newException(ValueError, "gateway frame deadline")
+      let incoming = socket.recv(4096)
+      if not await withTimeout(incoming, remaining):
+        socket.close()
+        try: discard await incoming
+        except CatchableError: discard
+        raise newException(ValueError, "gateway frame deadline")
+      let chunk = await incoming
+      if chunk.len == 0:
+        reader.finish()
+        return
+      for c in chunk:
+        var reply: string
+        var complete = false
+        reader.feed($c, proc(payload: string) =
+          reply = frame(handle(payload), maxFrame)
+          complete = true)
+        if complete:
+          let outgoing = socket.send(reply)
+          if not await withTimeout(outgoing, timeoutMs):
+            socket.close()
+            try: await outgoing
+            except CatchableError: discard
+            raise newException(ValueError, "gateway write deadline")
+          await outgoing
+          started = getMonoTime()

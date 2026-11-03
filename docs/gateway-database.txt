@@ -7,6 +7,9 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ gateway TLS context and async connection handler: TLS >=1.2, bounded frames,
+│  partial-frame/write deadlines; host supplies admission limits and auth handler
+│  └─ loopback TLS, silent peer and trickled partial-frame deadline tests pass
 ├─ gateway.json persists private roles and report provenance via shared atomic writer
 │  ├─ sessions never persist; reconnect starts fresh source snapshot/revisions
 │  └─ gateway weights remain injected; user accounts/auth fields still absent
