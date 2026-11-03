@@ -7,6 +7,9 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ src/gateway_snapshot.nim: draft v1 JSON envelope with paragon rows
+│  ├─ bounded input bytes/entry count; NFC IDs, unique subjects, finite [0,1] values
+│  └─ auth and server wiring external; schema provisional, no deployed compatibility
 ├─ trustdb bootstrap priors persist separately; witness broadcasts omit prior-only W
 ├─ syncParagon performs manual full replacement and commit-before-publish;
 │  gateway transport/authorization and snapshot wire schema still pending
