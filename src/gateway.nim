@@ -7,10 +7,16 @@ type
   GatewayReport* = object
     value*: float32
     revision*: uint64
+    deleted*: bool
   Gateway* = object
     paragons: HashSet[string]
     sessions: Table[string, uint64]
     reports: Table[tuple[reporter, subject: string], GatewayReport]
+    reportLimit: int
+
+proc initGateway*(maxReports = 65536): Gateway =
+  if maxReports <= 0: raise newException(ValueError, "invalid report quota")
+  Gateway(reportLimit: maxReports)
 
 proc setParagons*(g: var Gateway, ids: openArray[string]) =
   var replacement: HashSet[string]
@@ -38,7 +44,7 @@ proc beginSession*(g: var Gateway, reporter: string, epoch: uint64) =
   for key in keys: g.reports.del(key) # new session starts fresh report snapshot
 
 proc receive*(g: var Gateway, reporter, subject: string,
-              epoch, revision: uint64, value: float32): bool =
+              epoch, revision: uint64, value: float32, deleted = false): bool =
   let reporter = playerId(reporter)
   let subject = playerId(subject)
   if reporter notin g.paragons or reporter notin g.sessions or
@@ -47,7 +53,10 @@ proc receive*(g: var Gateway, reporter, subject: string,
     raise newException(ValueError, "invalid gateway report")
   let key = (reporter, subject)
   if key in g.reports and revision <= g.reports[key].revision: return false
-  g.reports[key] = GatewayReport(value: value, revision: revision)
+  let limit = if g.reportLimit == 0: 65536 else: g.reportLimit
+  if key notin g.reports and g.reports.len >= limit:
+    raise newException(ValueError, "gateway report quota exceeded")
+  g.reports[key] = GatewayReport(value: value, revision: revision, deleted: deleted)
   true
 
 proc snapshot*(g: Gateway, credibility: proc(id: string): float32): Table[string, float32] =
@@ -56,7 +65,7 @@ proc snapshot*(g: Gateway, credibility: proc(id: string): float32): Table[string
   var weights: Table[string, float32]
   var totals: Table[string, tuple[sum: float64, count: int]]
   for key, report in g.reports:
-    if key.reporter notin g.paragons: continue
+    if key.reporter notin g.paragons or report.deleted: continue
     if key.reporter notin weights:
       let weight = credibility(key.reporter)
       if classify(weight) in {fcNan, fcInf, fcNegInf} or weight < 0 or weight > 1:
@@ -68,17 +77,21 @@ proc snapshot*(g: Gateway, credibility: proc(id: string): float32): Table[string
 
 # Storage keeps role/report provenance; authenticated sessions never persist.
 
-proc save*(g: Gateway, directory: string) =
+proc save*(g: Gateway, directory: string, maxBytes = 16*1024*1024) =
   var roles = newJArray()
   var rows = newJArray()
   for id in g.paragons: roles.add %id
   for key, report in g.reports:
-    rows.add %*[key.reporter, key.subject, report.value, $report.revision]
-  let payload = $(%*{"version": 1, "paragons": roles, "reports": rows})
+    rows.add %*[key.reporter, key.subject, report.value, $report.revision, report.deleted]
+  let payload = $(%*{"version": 2, "paragons": roles, "reports": rows})
+  if maxBytes <= 0 or payload.len > maxBytes:
+    raise newException(ValueError, "gateway state exceeds limit")
   createDir(directory)
   writeAtomic(directory / "gateway.json", payload)
 
-proc loadGateway*(directory: string, maxBytes = 16*1024*1024): Gateway =
+proc loadGateway*(directory: string, maxBytes = 16*1024*1024,
+                  maxReports = 65536): Gateway =
+  result = initGateway(maxReports)
   let path = directory / "gateway.json"
   if not fileExists(path): return
   if maxBytes <= 0 or getFileSize(path) > int64(maxBytes):
@@ -87,9 +100,10 @@ proc loadGateway*(directory: string, maxBytes = 16*1024*1024): Gateway =
   if root.kind != JObject or root.len != 3 or not root.hasKey("version") or
      not root.hasKey("paragons") or not root.hasKey("reports"):
     raise newException(ValueError, "invalid gateway state")
-  if root["version"].kind != JInt or root["version"].getInt != 1 or
+  if root["version"].kind != JInt or root["version"].getInt notin [1, 2] or
      root["paragons"].kind != JArray or root["reports"].kind != JArray:
     raise newException(ValueError, "unsupported gateway state")
+  let version = root["version"].getInt
   for role in root["paragons"]:
     if role.kind != JString: raise newException(ValueError, "invalid paragon")
     let raw = role.getStr
@@ -98,9 +112,13 @@ proc loadGateway*(directory: string, maxBytes = 16*1024*1024): Gateway =
       raise newException(ValueError, "duplicate or noncanonical paragon")
     result.paragons.incl id
   for row in root["reports"]:
-    if row.kind != JArray or row.len != 4 or row[0].kind != JString or
+    if row.kind != JArray or row.len != (if version == 1: 4 else: 5) or row[0].kind != JString or
        row[1].kind != JString or row[2].kind notin {JInt, JFloat} or row[3].kind != JString:
       raise newException(ValueError, "invalid gateway report")
+    if version == 2 and row[4].kind != JBool:
+      raise newException(ValueError, "invalid report tombstone")
+    if result.reports.len >= maxReports:
+      raise newException(ValueError, "gateway report quota exceeded")
     let reporter = row[0].getStr
     let subject = row[1].getStr
     let value = row[2].getFloat
@@ -113,7 +131,8 @@ proc loadGateway*(directory: string, maxBytes = 16*1024*1024): Gateway =
     for c in serial:
       if c notin {'0'..'9'}: raise newException(ValueError, "invalid gateway revision")
     result.reports[(reporter, subject)] = GatewayReport(value: float32(value),
-                                                       revision: parseBiggestUInt(serial))
+                                                       revision: parseBiggestUInt(serial),
+                                                       deleted: version == 2 and row[4].getBool)
 
 when defined(ssl):
   import std/[net, asyncdispatch, asyncnet, monotimes, times]

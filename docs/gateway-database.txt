@@ -7,6 +7,10 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ gateway report deletion uses revisioned tombstones; excluded from aggregation
+│  but retained until fresh source session; saved v2 reads legacy v1 report state
+├─ report-key quota defaults 65536; state save/load byte limit defaults 16 MiB
+│  └─ limits configurable; existing-key updates still allowed at report cap
 ├─ bounded async listener: per-connection handler factory, concurrent-connection cap,
 │  tracked child cleanup and idempotent close; host still supplies actual auth
 ├─ gateway TLS context and async connection handler: TLS >=1.2, bounded frames,

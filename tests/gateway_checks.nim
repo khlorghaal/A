@@ -38,6 +38,11 @@ block persistence:
   doAssert g.receive("b", "ship", 2, high(uint64), 0.5)
   g.save(path)
   let committed = readFile(path / "gateway.json")
+  try:
+    g.save(path, maxBytes = 1)
+    doAssert false
+  except ValueError: discard
+  doAssert readFile(path / "gateway.json") == committed
   writeFile(path / "gateway.json.tmp", "abandoned")
   var restored = loadGateway(path)
   doAssert abs(restored.snapshot(weights)["ship"] - 0.4) < 0.00001
@@ -57,8 +62,50 @@ block persistence:
     discard loadGateway(path, maxBytes = 1)
     doAssert false
   except ValueError: discard
+
+block legacyGateway:
+  let path = getTempDir() / ("a-gateway-v1-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  createDir(path)
+  defer: removeDir(path)
+  writeFile(path / "gateway.json",
+    "{\"version\":1,\"paragons\":[\"a\"],\"reports\":[[\"a\",\"ship\",0.5,\"1\"]]}")
+  let restored = loadGateway(path)
+  doAssert abs(restored.snapshot(weights)["ship"] - 0.2) < 0.00001
   writeFile(path / "gateway.json", "{}")
   try:
     discard loadGateway(path)
     doAssert false
   except ValueError: discard
+
+block deletion:
+  var state: Gateway
+  state.setParagons(["a", "b"])
+  state.beginSession("a", 1)
+  state.beginSession("b", 2)
+  doAssert state.receive("a", "ship", 1, 1, 1)
+  doAssert state.receive("b", "ship", 2, 1, 0.5)
+  doAssert state.receive("a", "ship", 1, 2, 0, deleted = true)
+  doAssert not state.receive("a", "ship", 1, 1, 1)
+  doAssert abs(state.snapshot(weights)["ship"] - 0.4) < 0.00001
+  doAssert state.receive("a", "ship", 1, 3, 1)
+  doAssert state.receive("b", "ship", 2, 2, 0, deleted = true)
+  doAssert state.receive("a", "ship", 1, 4, 0, deleted = true)
+  doAssert "ship" notin state.snapshot(weights)
+  let path = getTempDir() / ("a-tombstones-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  defer: removeDir(path)
+  state.save(path)
+  doAssert "ship" notin loadGateway(path).snapshot(weights)
+
+block quotas:
+  var state = initGateway(maxReports = 1)
+  state.setParagons(["a"])
+  state.beginSession("a", 1)
+  doAssert state.receive("a", "first", 1, 1, 0.5)
+  doAssert state.receive("a", "first", 1, 2, 0.4)
+  try:
+    discard state.receive("a", "second", 1, 1, 0.5)
+    doAssert false
+  except ValueError: discard
+  doAssert state.snapshot(weights).len == 1
