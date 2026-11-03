@@ -1,5 +1,5 @@
 Gateway and database draft
-├─ design and pseudocode only; proposed mechanisms below not implemented
+├─ pseudocode describes target; implemented components listed separately below
 ├─ gateway: separate executable, TLS over TCP, framed custom messages; no HTTP
 ├─ peers: UDP, own auth; blastd receives authenticated lifecycle/data from host
 ├─ gateway issues session token; peers verify token/proof locally
@@ -20,7 +20,7 @@ Current implementation
 │  ├─ sessions never persist; reconnect starts fresh source snapshot/revisions
 │  └─ gateway weights remain injected; user accounts/auth fields still absent
 ├─ src/gateway.nim: report-state core; host supplies authenticated session epochs
-│  and immutable previous-score weights; no listener/auth implementation yet
+│  and immutable previous-score weights; auth wiring/standalone executable pending
 │  ├─ one report per reporter/subject; stale revisions and old sessions rejected
 │  ├─ demotion deletes source reports/session; fresh session clears source snapshot
 │  └─ membership private; callback weighting keeps unresolved policy injectable
@@ -29,13 +29,14 @@ Current implementation
 │  └─ auth and server wiring external; schema provisional, no deployed compatibility
 ├─ trustdb bootstrap priors persist separately; witness broadcasts omit prior-only W
 ├─ syncParagon performs manual full replacement and commit-before-publish;
-│  gateway transport/authorization and snapshot wire schema still pending
+│  gateway operation dispatch/authorization still pending; snapshot codec provisional
 ├─ src/gateway_frames.nim: bounded four-byte big-endian length framing; opaque body
 │  └─ tests cover fragmented/coalesced input, empty/binary payload and truncated EOF
 ├─ src/trustdb.nim: NFC IDs, witnessed/paragon scalar stores, volatile swarm edges
 │  ├─ witnessed value and discredit persist; paragon aggregate persists
 │  ├─ refresh weights swarm reports by previous combined reporter credibility
-│  └─ save validates tables, then replaces files individually via temporary files
+│  └─ save validates full state, then atomically replaces trust.toml; POSIX fsync
+│     covers staged file and parent directory
 ├─ src/trustsync.nim: firsthand reports only; bootstrap row and later updates
 │  ├─ report key = reporter/subject; revision watermark currently PeerId/subject
 │  └─ no reporter restart epoch, deletion protocol, or paragon classification

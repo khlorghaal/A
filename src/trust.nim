@@ -1,13 +1,11 @@
 ## Credibility and locally measured network reliability.
-import saturation
+func sat(x: float32): float32 = clamp(x, 0'f32, 1'f32)
 
 type
   Credibility* = object
     value*, discredit*: float32
   Opinion* = object
     reporter*, value*: float32
-
-#todo cultivate todo funcs
 
 proc desync*(c: var Credibility, severity: float32) =
   ## Severity already accounts for the packet interval.

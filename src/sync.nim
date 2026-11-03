@@ -122,8 +122,7 @@ proc publish*[T](s: var Sync, entities: openArray[T]) =
     s.keys[key] = entity.id
     s.kind.row.add Datum(key: key, revision: s.serial, bytes: encode(entity))
 
-#todo i dont like the name "ingest" lol
-proc ingest[T](s: var Sync, entities: openArray[T]) =
+proc receiveReports[T](s: var Sync, entities: openArray[T]) =
   for receipt in s.kind.queue:
     let d = receipt.datum
     if not finite(float64(d.age)) or float64(d.age) < 0: continue
@@ -187,7 +186,7 @@ proc reconcile*[T](s: var Sync, n: Net, entities: var openArray[T],
   doAssert finite(s.ownerBonus) and finite(s.rate) and
            finite(float64(s.ttl)) and s.ttl > Seconds(0)
   s.time += dt
-  s.ingest(entities)
+  s.receiveReports(entities)
 
   # Build a weighted target from fresh peer reports, then ease local state to it.
   for entity in entities.mitems:

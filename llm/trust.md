@@ -89,7 +89,9 @@ at the reporting hook.
 
 ## Credibility databases and dissemination
 
-Each client keeps three local databases:
+Three logical categories below use historical file names. Current storage:
+trust.toml holds witnessed/discredit, paragon aggregate and bootstrap prior; swarm
+remains volatile. Prior-only W never enters firsthand broadcasts.
 
 | File | Influence | Evidence |
 |---|---:|---|
