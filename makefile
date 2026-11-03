@@ -65,6 +65,7 @@ test: build/blastd-testpass
 	nim c $(fgs) -o:build/trustsync-checks      -r tests/trustsync_checks.nim
 	nim c $(fgs) -o:build/gateway-frames-checks -r tests/gateway_frames_checks.nim
 	nim c $(fgs) -o:build/gateway-snapshot-checks -r tests/gateway_snapshot_checks.nim
+	nim c $(fgs) -o:build/gateway-checks          -r tests/gateway_checks.nim
 
 clean:
 	rm -rf build

@@ -7,6 +7,11 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ src/gateway.nim: report-state core; host supplies authenticated session epochs
+│  and immutable previous-score weights; no listener/auth implementation yet
+│  ├─ one report per reporter/subject; stale revisions and old sessions rejected
+│  ├─ demotion deletes source reports/session; fresh session clears source snapshot
+│  └─ membership private; callback weighting keeps unresolved policy injectable
 ├─ src/gateway_snapshot.nim: draft v1 JSON envelope with paragon rows
 │  ├─ bounded input bytes/entry count; NFC IDs, unique subjects, finite [0,1] values
 │  └─ auth and server wiring external; schema provisional, no deployed compatibility
