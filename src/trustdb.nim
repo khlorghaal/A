@@ -133,6 +133,23 @@ proc readDb(path: string, witnessed = false, unified = false):
     elif name == "prior": result.prior = move(values)
     else:               result.discredit = move(values)
 
+proc writeAtomic*(path, data: string) =
+  ## Caller owns database writer; same-directory replacement commits one file.
+  let tmp = path & ".tmp"
+  var f = open(tmp, fmWrite)
+  try:
+    f.write(data)
+    f.flushFile()
+    when defined(posix):
+      if posix.fsync(cint(f.getFileHandle())) != 0: raiseOSError(osLastError())
+  finally: f.close()
+  moveFile(tmp, path)
+  when defined(posix):
+    let fd = posix.open(parentDir(path).cstring, posix.O_RDONLY)
+    if fd < 0: raiseOSError(osLastError())
+    defer: discard posix.close(fd)
+    if posix.fsync(fd) != 0: raiseOSError(osLastError())
+
 proc writeDb(path: string, values: Table[string, float32],
              discredit, paragon, prior: Table[string, float32]) =
   let root = Toml_v100.decode("[trust]\n[discredit]\n[paragon]\n[prior]\n", TomlValueRef)
@@ -159,20 +176,7 @@ proc writeDb(path: string, values: Table[string, float32],
     else:
       data.add encoded[i]
       inc i
-  let tmp = path & ".tmp"
-  var f = open(tmp, fmWrite)
-  try:
-    f.write(data)
-    f.flushFile()
-    when defined(posix):
-      if posix.fsync(cint(f.getFileHandle())) != 0: raiseOSError(osLastError())
-  finally: f.close()
-  moveFile(tmp, path)
-  when defined(posix):
-    let fd = posix.open(parentDir(path).cstring, posix.O_RDONLY)
-    if fd < 0: raiseOSError(osLastError())
-    defer: discard posix.close(fd)
-    if posix.fsync(fd) != 0: raiseOSError(osLastError())
+  writeAtomic(path, data)
 
 proc load*(directory: string): TrustDb =
   let unified = fileExists(directory / "trust.toml")

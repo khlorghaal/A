@@ -1,5 +1,6 @@
 ## Gateway report state. Host supplies authenticated sessions and credibility policy.
-import std/[tables, sets, math]
+import std/[tables, sets, math, json, os, strutils]
+from trustdb import writeAtomic
 import identity
 
 type
@@ -64,3 +65,52 @@ proc snapshot*(g: Gateway, credibility: proc(id: string): float32): Table[string
     totals.mgetOrPut(key.subject, (0.0, 0)).sum += float64(weights[key.reporter])*float64(report.value)
     inc totals[key.subject].count
   for subject, total in totals: result[subject] = float32(total.sum / float64(total.count))
+
+# Storage keeps role/report provenance; authenticated sessions never persist.
+
+proc save*(g: Gateway, directory: string) =
+  var roles = newJArray()
+  var rows = newJArray()
+  for id in g.paragons: roles.add %id
+  for key, report in g.reports:
+    rows.add %*[key.reporter, key.subject, report.value, $report.revision]
+  let payload = $(%*{"version": 1, "paragons": roles, "reports": rows})
+  createDir(directory)
+  writeAtomic(directory / "gateway.json", payload)
+
+proc loadGateway*(directory: string, maxBytes = 16*1024*1024): Gateway =
+  let path = directory / "gateway.json"
+  if not fileExists(path): return
+  if maxBytes <= 0 or getFileSize(path) > int64(maxBytes):
+    raise newException(ValueError, "gateway state exceeds limit")
+  let root = parseJson(readFile(path))
+  if root.kind != JObject or root.len != 3 or not root.hasKey("version") or
+     not root.hasKey("paragons") or not root.hasKey("reports"):
+    raise newException(ValueError, "invalid gateway state")
+  if root["version"].kind != JInt or root["version"].getInt != 1 or
+     root["paragons"].kind != JArray or root["reports"].kind != JArray:
+    raise newException(ValueError, "unsupported gateway state")
+  for role in root["paragons"]:
+    if role.kind != JString: raise newException(ValueError, "invalid paragon")
+    let raw = role.getStr
+    let id = playerId(raw)
+    if id != raw or id in result.paragons:
+      raise newException(ValueError, "duplicate or noncanonical paragon")
+    result.paragons.incl id
+  for row in root["reports"]:
+    if row.kind != JArray or row.len != 4 or row[0].kind != JString or
+       row[1].kind != JString or row[2].kind notin {JInt, JFloat} or row[3].kind != JString:
+      raise newException(ValueError, "invalid gateway report")
+    let reporter = row[0].getStr
+    let subject = row[1].getStr
+    let value = row[2].getFloat
+    let serial = row[3].getStr
+    if playerId(reporter) != reporter or playerId(subject) != subject or
+       reporter notin result.paragons or (reporter, subject) in result.reports or
+       classify(value) in {fcNan, fcInf, fcNegInf} or value < 0 or value > 1 or
+       serial.len == 0:
+      raise newException(ValueError, "invalid gateway provenance/value")
+    for c in serial:
+      if c notin {'0'..'9'}: raise newException(ValueError, "invalid gateway revision")
+    result.reports[(reporter, subject)] = GatewayReport(value: float32(value),
+                                                       revision: parseBiggestUInt(serial))

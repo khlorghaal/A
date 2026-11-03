@@ -1,4 +1,4 @@
-import std/[tables, math]
+import std/[tables, math, os]
 import ../src/gateway
 var g: Gateway
 g.setParagons(["a", "b"])
@@ -30,3 +30,35 @@ try:
   doAssert false
 except ValueError: discard
 echo "gateway report state checks passed"
+
+block persistence:
+  let path = getTempDir() / ("a-gateway-" & $getCurrentProcessId())
+  if dirExists(path): removeDir(path)
+  defer: removeDir(path)
+  doAssert g.receive("b", "ship", 2, high(uint64), 0.5)
+  g.save(path)
+  let committed = readFile(path / "gateway.json")
+  writeFile(path / "gateway.json.tmp", "abandoned")
+  var restored = loadGateway(path)
+  doAssert abs(restored.snapshot(weights)["ship"] - 0.4) < 0.00001
+  doAssert not restored.receive("b", "ship", 2, high(uint64), 0.5)
+  restored.beginSession("b", 4)
+  doAssert restored.receive("b", "ship", 4, 1, 0.25)
+  doAssert abs(restored.snapshot(weights)["ship"] - 0.2) < 0.00001
+  removeFile(path / "gateway.json.tmp")
+  createDir(path / "gateway.json.tmp")
+  try:
+    restored.save(path)
+    doAssert false
+  except IOError, OSError: discard
+  doAssert readFile(path / "gateway.json") == committed
+  removeDir(path / "gateway.json.tmp")
+  try:
+    discard loadGateway(path, maxBytes = 1)
+    doAssert false
+  except ValueError: discard
+  writeFile(path / "gateway.json", "{}")
+  try:
+    discard loadGateway(path)
+    doAssert false
+  except ValueError: discard

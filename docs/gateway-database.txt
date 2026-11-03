@@ -7,6 +7,9 @@ Gateway and database draft
 └─ gateway serves discovery/trust; no game simulation or gameplay relay
 
 Current implementation
+├─ gateway.json persists private roles and report provenance via shared atomic writer
+│  ├─ sessions never persist; reconnect starts fresh source snapshot/revisions
+│  └─ gateway weights remain injected; user accounts/auth fields still absent
 ├─ src/gateway.nim: report-state core; host supplies authenticated session epochs
 │  and immutable previous-score weights; no listener/auth implementation yet
 │  ├─ one report per reporter/subject; stale revisions and old sessions rejected
@@ -174,7 +177,9 @@ Pseudocode: peer bootstrap and witness exchange
     # deletion, snapshot completeness and restart epochs need protocol definition
 
 Persistence proposal: basic transaction
-├─ one writer; one TOML state file per peer/gateway database directory
+├─ one writer; one state file per database directory
+│  ├─ peer trust.toml; gateway gateway.json; auth-owned account storage still pending
+│  └─ callers must enforce one writer; current save helpers do not acquire process lock
 │  └─ logical tables share file so one replacement commits complete state
 ├─ stage complete update in memory; validate all tables before touching live state
 ├─ write same-directory temporary file; flush/fsync; atomic rename over live file
