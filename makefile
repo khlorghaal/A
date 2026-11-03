@@ -10,7 +10,7 @@ endif # futhark opir hack
 run: build/A
 	./build/A --db-dir build/client/db
 
-game_sources = a.nimble nim.cfg $(wildcard src/*.nim) \
+game_sources = a.nimble nim.cfg $(wildcard src/*.nim deps/blastd/src/*.nim) \
                deps/termbox.c deps/termbox.h deps/termbox2/termbox2.h
 
 build/A build/A-multi: $(game_sources)
@@ -74,7 +74,7 @@ build/A-multi: tests/socket_gateway.nim tests/sim_socket.nim
 	mkdir -p build
 	nim c $(fgs) -d:simSockets -o:$@ src/a.nim
 
-build/gateway/relay: nim.cfg tests/socket_gateway.nim tests/sim_socket.nim src/p2p.nim
+build/gateway/relay: nim.cfg tests/socket_gateway.nim tests/sim_socket.nim src/p2p.nim $(wildcard deps/blastd/src/*.nim)
 	@if [ -f build/gateway ]; then mv build/gateway build/gateway.previous; fi
 	mkdir -p build/gateway
 	nim c $(fgs) -o:$@ tests/socket_gateway.nim

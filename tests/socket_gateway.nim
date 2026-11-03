@@ -2,7 +2,7 @@
 import std/[net, nativesockets, json, jsonutils, tables, monotimes]
 from std/posix import EAGAIN, EWOULDBLOCK
 import ../src/p2p
-import ../src/units as aunits
+from blastd import nil
 when isMainModule:
   import std/[os, times, strutils]
   import sim_socket
@@ -13,7 +13,7 @@ proc packet(dst: PeerId, e: Event): string =
 proc unpack(msg: JsonNode): Event =
   result = msg["event"].jsonTo(Event)
   # All test processes share this OS monotonic clock, unlike Internet peers.
-  result.datum.age += aunits.Seconds(float64(getMonoTime().ticks - msg["sentAt"].getBiggestInt)/1e9)
+  result.datum.age += blastd.Seconds(float64(getMonoTime().ticks - msg["sentAt"].getBiggestInt)/1e9)
 
 proc bindClient*(n: var Net, port: Port) =
   let socket = newSocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)

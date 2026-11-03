@@ -7,7 +7,7 @@
 - Memory: `~/.optmem/memo`; shared notes: `/workspace/agent-state/notes/`.
 
 A is the glyph of a ship. `src/`: game `client.nim`/`sync.nim`, network core
-`p2p.nim`; transport/policy external. `tests/` checks; `docs/` design/todo;
+`p2p.nim` adapts blastd; transport/policy external. `tests/` checks; `docs/` design/todo;
 `llm/` project notes. Shared skills/personal notes: `/workspace/agent-state`.
 
 Keep compact data-oriented layout and aligned columns. For important code,

@@ -20,8 +20,8 @@ Client database paths
 └─ the client loads trust data on startup and saves on clean exit; policy integration remains pending
 
 current code
-├─ src/p2p.nim uses uint64 peer IDs and external authenticated transport hooks
-│  └─ peer ping and its limit use Milliseconds; sample age and sync expiry clocks use Seconds
+├─ src/p2p.nim adapts local blastd checkout; host supplies authenticated transport
+│  └─ independent time types: convert at boundary; ping in milliseconds, age in seconds
 ├─ src/sync.nim reconciles marked entity fields and tracks ownership
 ├─ src/client.nim owns terminal initialization, drawing, controls and debug header
 └─ tests/socket_gateway.nim is a test-only UDP relay, not an identity gateway

@@ -1,4 +1,6 @@
 build and inspection
+├─ place local blastd checkout at deps/blastd; symlink to existing checkout also works
+│  └─ Nim loads blastd from deps/blastd/src; checkout not tracked by A
 ├─ initialize deps/termbox2 and install Nimble dependencies, C, Clang and GLib runtime dependencies
 ├─ make / make run starts the client; make build/A builds it without running
 │  └─ --db-dir DIRECTORY selects the client trust database; default is build/client/db

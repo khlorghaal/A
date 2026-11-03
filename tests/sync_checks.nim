@@ -1,5 +1,8 @@
 import std/[tables, math]
 import ../src/[p2p, sync]
+from blastd import nil
+
+static: doAssert not (Seconds is blastd.Seconds)
 
 type Entity = object
   id     : Uid
@@ -147,7 +150,7 @@ block kineticSamples:
   var source = @[Body(id: id, kin: sync_k2(p: (0,0), v: (10,0)))]
   tx.publish(source)
   var sample = tx.kind.row[0]
-  sample.age = Seconds(0.2)
+  sample.age = blastd.Seconds(0.2)
 
   var rx = initSync(n, 9)
   rx.horizon = Seconds(1)
@@ -166,7 +169,7 @@ block kineticSamples:
   source[0].kin = sync_k2(p: (7,0), v: (0,0))
   tx.publish(source)
   sample = tx.kind.row[0]
-  sample.age = Seconds(0.15)
+  sample.age = blastd.Seconds(0.15)
   rx.kind.queue.add (1'u64, sample)
   rx.reconcile(n, bodies, Seconds(0.25))
   doAssert bodies[0].kin.v.x < 10
@@ -178,13 +181,13 @@ block kineticSamples:
   capped.publish(bodies)
   tx.publish(@[Body(id: id, kin: sync_k2(v: (10,0)))])
   sample = tx.kind.row[0]
-  sample.age = Seconds(0.25)
+  sample.age = blastd.Seconds(0.25)
   capped.kind.queue.add (1'u64, sample)
   capped.reconcile(n, bodies, Seconds(0.1))
   doAssert abs(bodies[0].kin.p.x - 2.5) < 0.0001
 
   let projected = bodies[0].kin
-  sample.age = Seconds(1)
+  sample.age = blastd.Seconds(1)
   inc sample.revision
   capped.kind.queue.add (1'u64, sample)
   capped.reconcile(n, bodies, Seconds(0.1))
@@ -193,7 +196,7 @@ block kineticSamples:
   # Malformed ages cannot poison state or advance the revision watermark.
   let old = bodies[0].kin
   for age in [-1.0, Inf, NaN]:
-    sample.age = Seconds(age)
+    sample.age = blastd.Seconds(age)
     inc sample.revision
     capped.kind.queue.add (1'u64, sample)
     capped.reconcile(n, bodies, Seconds(0))
@@ -203,14 +206,14 @@ block kineticSamples:
   tx.publish(@[Body(id: id, kin: sync_k2(p: (3.4e38,0), v: (3.4e38,0)))])
   sample = tx.kind.row[0]
   sample.revision = 100
-  sample.age = Seconds(0.25)
+  sample.age = blastd.Seconds(0.25)
   capped.kind.queue.add (1'u64, sample)
   capped.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == old
 
   var expired = initSync(n, 11)
   expired.publish(bodies)
-  sample.age = expired.ttl
+  sample.age = blastd.Seconds(float64(expired.ttl))
   expired.kind.queue.add (1'u64, sample)
   expired.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == old

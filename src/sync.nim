@@ -140,7 +140,7 @@ proc ingest[T](s: var Sync, entities: openArray[T]) =
       continue
 
     s.reports[index] = Report(revision: d.revision, time: s.time,
-                              age: d.age, bytes: d.bytes)
+                              age: Seconds(float64(d.age)), bytes: d.bytes)
   s.kind.queue.setLen(0)
 
 func toward(a, b, alpha: float32): float32 =

@@ -5,6 +5,7 @@ a.out
 web/build
 nimcache/
 __pycache__/
+/deps/blastd
 
 # Generated source images from visual annealing.
 /build/annealing/
