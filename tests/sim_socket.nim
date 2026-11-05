@@ -1,7 +1,6 @@
 ## Deterministic datagram gateway. Time is advanced explicitly in milliseconds.
 import std/[random, algorithm]
 import ../src/p2p
-from blastd import nil
 
 type
   Flight = object
@@ -38,7 +37,7 @@ proc recv*(g: var Gateway, dst: PeerId): seq[Event] =
   for f in g.flights:
     if f.dst == dst and f.at <= g.now:
       var e = f.event
-      e.datum.age += blastd.seconds(blastd.Milliseconds(g.now - f.sent))
+      e.datum.age += uint64(g.now - f.sent)
       result.add e
     else: pending.add f
   g.flights = pending

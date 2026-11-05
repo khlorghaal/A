@@ -1,9 +1,8 @@
 ## Test map: codec/local fields; owner weighting; report age/TTL; kinetic projection.
 import std/[tables, math]
 import ../src/[p2p, sync]
-from blastd import nil
 
-static: doAssert not (Seconds is blastd.Seconds)
+static: doAssert not (Seconds is uint64)
 
 type Entity = object
   id     : Uid
@@ -92,13 +91,13 @@ block ownerCredibility:
 
 # Sender age advances with each new tick; duplicate or older revisions must not reset it.
 block senderAge:
-  var age = 0.0
+  var age = 0'u64
   let send = sendDatum
-  sendDatum = proc(p: Peer, k: Kind, d: Datum) = age = float64(d.age)
+  sendDatum = proc(p: Peer, k: Kind, d: Datum) = age = d.age
   left.tick(Seconds(0.075))
-  doAssert abs(age - 0.075) < 0.000001
+  doAssert age == 75
   left.tick(Seconds(0.025))
-  doAssert abs(age - 0.1) < 0.000001
+  doAssert age == 100
   sendDatum = send
 
 block staleRevisionDoesNotRenew:
@@ -205,7 +204,7 @@ block kineticSamples:
   var source = @[Body(id: id, kin: sync_k2(p: (0,0), v: (10,0)))]
   tx.publish(source)
   var sample = tx.kind.row[0]
-  sample.age = blastd.Seconds(0.2)
+  sample.age = 200
 
   var rx = initSync(n, 9)
   rx.horizon = Seconds(1)
@@ -224,7 +223,7 @@ block kineticSamples:
   source[0].kin = sync_k2(p: (7,0), v: (0,0))
   tx.publish(source)
   sample = tx.kind.row[0]
-  sample.age = blastd.Seconds(0.15)
+  sample.age = 150
   rx.kind.queue.add (1'u64, sample)
   rx.reconcile(n, bodies, Seconds(0.25))
   doAssert bodies[0].kin.v.x < 10
@@ -236,39 +235,38 @@ block kineticSamples:
   capped.publish(bodies)
   tx.publish(@[Body(id: id, kin: sync_k2(v: (10,0)))])
   sample = tx.kind.row[0]
-  sample.age = blastd.Seconds(0.25)
+  sample.age = 250
   capped.kind.queue.add (1'u64, sample)
   capped.reconcile(n, bodies, Seconds(0.1))
   doAssert abs(bodies[0].kin.p.x - 2.5) < 0.0001
 
   let projected = bodies[0].kin
-  sample.age = blastd.Seconds(1)
+  sample.age = 1000
   inc sample.revision
   capped.kind.queue.add (1'u64, sample)
   capped.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == projected
 
-  # Malformed ages cannot poison state or advance the revision watermark.
+  # Unsigned ages cannot be negative or non-finite; excessive age expires.
   let old = bodies[0].kin
-  for age in [-1.0, Inf, NaN]:
-    sample.age = blastd.Seconds(age)
-    inc sample.revision
-    capped.kind.queue.add (1'u64, sample)
-    capped.reconcile(n, bodies, Seconds(0))
-    doAssert bodies[0].kin == old
+  sample.age = high(uint64)
+  inc sample.revision
+  capped.kind.queue.add (1'u64, sample)
+  capped.reconcile(n, bodies, Seconds(0))
+  doAssert bodies[0].kin == old
 
   # Finite coordinates may still overflow during projection.
   tx.publish(@[Body(id: id, kin: sync_k2(p: (3.4e38,0), v: (3.4e38,0)))])
   sample = tx.kind.row[0]
   sample.revision = 100
-  sample.age = blastd.Seconds(0.25)
+  sample.age = 250
   capped.kind.queue.add (1'u64, sample)
   capped.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == old
 
   var expired = initSync(n, 11)
   expired.publish(bodies)
-  sample.age = blastd.Seconds(float64(expired.ttl))
+  sample.age = uint64(float64(expired.ttl) * 1000)
   expired.kind.queue.add (1'u64, sample)
   expired.reconcile(n, bodies, Seconds(0.1))
   doAssert bodies[0].kin == old

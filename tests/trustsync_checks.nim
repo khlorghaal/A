@@ -3,10 +3,7 @@ import std/[tables, math]
 import ../src/[p2p, trustdb, trustsync]
 from blastd import nil
 
-static: doAssert not (Milliseconds is blastd.Milliseconds)
-static: doAssert not compiles(Milliseconds(1) + Seconds(1))
-static: doAssert not compiles(Seconds(1) + Milliseconds(1))
-static: doAssert not compiles(Seconds(1) < Milliseconds(1))
+static: doAssert not (Milliseconds is uint64)
 doAssert float64(seconds(Milliseconds(1250))) == 1.25
 doAssert int64(milliseconds(Seconds(1.25))) == 1250
 doAssert int64(milliseconds(Seconds(-0.0015))) == -2
@@ -91,11 +88,11 @@ block malformedReports:
   doAssert abs(rightDb[].swarm[("alice", "bob🙂")] - 0.6) < 0.00001
 
 rx.attachPositionPolicy(right)
-doAssert right.positionTrust(Peer(info: PeerInfo(id: 3), ping: blastd.Milliseconds(-1)), 0) == 0
+doAssert right.positionTrust(Peer(info: PeerInfo(id: 3), ping: blastd.NoPing), 0) == 0
 right.reportDesync(1, 1)
 rightDb[].advance(1)
 doAssert rightDb[].witnessed["alice"] < 1
-right.peers[1].ping = blastd.Milliseconds(80)
+right.peers[1].ping = 80
 doAssert abs(right.positionTrust(right.peers[1], 0) - 0.8) < 0.0001
 doAssert abs(right.positionTrust(right.peers[1], 0.3) - 0.82) < 0.0001
 echo "witness dissemination checks passed"

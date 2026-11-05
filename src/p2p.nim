@@ -1,8 +1,10 @@
-## A-to-blastd boundary. Time arguments are seconds; ping is milliseconds.
-import blastd except Seconds, Milliseconds, seconds, milliseconds
+## A-to-blastd boundary. Core time values are unsigned milliseconds.
+import blastd
 import units
-export blastd except Seconds, Milliseconds, seconds, milliseconds
+export blastd
 export units
 
 proc tick*(n: var Net, dt: units.Seconds) =
-  blastd.tick(n, blastd.Seconds(float64(dt)))
+  let duration = int64(milliseconds(dt))
+  if duration < 0: raise newException(ValueError, "negative tick duration")
+  blastd.tick(n, uint64(duration))

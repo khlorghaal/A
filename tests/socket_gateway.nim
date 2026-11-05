@@ -2,7 +2,6 @@
 import std/[net, nativesockets, json, jsonutils, tables, monotimes, os, strutils]
 from std/posix import EAGAIN, EWOULDBLOCK
 import ../src/p2p
-from blastd import nil
 when isMainModule:
   import std/times
   import sim_socket
@@ -13,7 +12,8 @@ proc packet(dst: PeerId, e: Event): string =
 proc unpack(msg: JsonNode): Event =
   result = msg["event"].jsonTo(Event)
   # All test processes share this OS monotonic clock, unlike Internet peers.
-  result.datum.age += blastd.Seconds(float64(getMonoTime().ticks - msg["sentAt"].getBiggestInt)/1e9)
+  let elapsed = max(0'i64, getMonoTime().ticks - msg["sentAt"].getBiggestInt)
+  result.datum.age += uint64(elapsed div 1_000_000)
 
 proc bindClient*(n: var Net, port: Port) =
   let socket = newSocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
@@ -42,7 +42,7 @@ proc bindClient*(n: var Net, port: Port) =
       Event(event: data, source: source, kind: k.id, datum: d)))
   sendPeers = proc(p: Peer, peers: seq[PeerInfo]) = discard
   # Explicit fixture ping, not an Internet measurement or authentication claim.
-  let fixturePing = blastd.Milliseconds(getEnv("A_TEST_PING_MS", "0").parseBiggestInt)
+  let fixturePing = getEnv("A_TEST_PING_MS", "0").parseBiggestUInt.uint64
   traffic = proc(p: Peer) = p.ping = fixturePing
   p2p.accept = proc(p: Peer, k: Kind, d: Datum): bool = true
 

@@ -81,8 +81,8 @@ proc attachPositionPolicy*(s: TrustSync, n: var Net,
     raise newException(ValueError, "invalid unknown reliability")
   let db = s.db
   n.positionTrust = proc(p: Peer, credibilityBonus: float32): float32 =
-    let r = if int64(p.ping) < 0: unknownReliability
-            else: reliability(float32(int64(p.ping)))
+    let r = if p.ping == NoPing: unknownReliability
+            else: reliability(float32(p.ping))
     let cred = if p.info.playerId.len == 0: 0'f32
                else: db[].credibility(p.info.playerId)
     positionTrust(cred + credibilityBonus, r)
