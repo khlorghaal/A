@@ -30,13 +30,14 @@ Current implementation
 │  and immutable previous-score weights; auth wiring/standalone executable pending
 │  ├─ one report per reporter/subject; stale revisions and old sessions rejected
 │  ├─ demotion deletes source reports/session; fresh session clears source snapshot
-│  └─ membership private; callback weighting keeps unresolved policy injectable
+│  └─ membership private; reporter-weight source still needs trusted inputs
 ├─ src/gateway_snapshot.nim: draft v1 JSON envelope with paragon rows
 │  ├─ bounded input bytes/entry count; NFC IDs, unique subjects, finite [0,1] values
 │  └─ auth and server wiring external; schema provisional, no deployed compatibility
 ├─ trustdb bootstrap priors persist separately; witness broadcasts omit prior-only W
 ├─ syncParagon performs manual full replacement and commit-before-publish;
-│  gateway operation dispatch/authorization still pending; snapshot codec provisional
+│  snapshot dispatch supports authenticated sessions; live auth/client wiring
+│  remains pending, and snapshot codec stays provisional
 ├─ src/gateway_frames.nim: bounded four-byte big-endian length framing; opaque body
 │  └─ tests cover fragmented/coalesced input, empty/binary payload and truncated EOF
 ├─ src/trustdb.nim: NFC IDs, witnessed/paragon scalar stores, volatile swarm edges
@@ -59,7 +60,7 @@ Data ownership
 │  ├─ reports[reporter, subject] = value, report epoch/revision, local receipt time
 │  ├─ combined[subject] = derived score; rebuild after load or updates
 │  ├─ reliability[connection] = locally measured ping-derived score
-│  └─ bootstrap contacts and any permitted paragon classification; refresh on login
+│  └─ bootstrap contacts; no role list or automatic snapshot refresh
 ├─ gateway durable
 │  ├─ users[id] = account record; auth-owned fields opaque to this draft
 │  ├─ paragons[id] = gateway role membership; private administrative data
@@ -80,8 +81,8 @@ Open storage choices
 │  ├─ preserve existing W across login/manual sync; persist prior/observed marker
 │  └─ prior alone never enters witness broadcasts; local observation establishes
 │     firsthand value under existing credibility rules
-├─ gateway reporter weight source: combined credibility needs defined inputs;
-│  gateway observes no gameplay, so cannot manufacture firsthand witness scores
+├─ gateway reporter-weight input: callback consumes previous combined score;
+│  authoritative witness input needs host/auth provenance, not gameplay inference
 └─ derived cache persistence optional; authoritative input must allow reconstruction
 
 Aggregation rule
@@ -93,21 +94,21 @@ Aggregation rule
 ├─ compute all next scores from same previous snapshot, then swap once
 │  └─ fixed scheduled step; no iteration per incoming packet or until convergence
 ├─ reliability stays local; never import remote ping/reliability recommendations
-└─ paragon component source unresolved: gateway aggregate versus direct weighted
-   paragon reports; avoid counting same report in both .4 and .2 categories
+└─ paragon component uses gateway aggregate from private-role reports; clients do not
+   classify individual paragon reports or receive membership
 
-Paragon visibility: unresolved policy conflict
-├─ existing notes hide gateway paragons but also mention client paragon lists
-├─ direct paragon classification requires client to know reporter category
-├─ recommended A: gateway privately aggregates paragons; client receives aggregate
-│  plus bootstrap contacts without exposing complete membership
-├─ candidate B: client receives explicit membership and classifies direct reports;
-│  changes privacy promise and needs explicit choice
-└─ draft leaves choice open; friend trust remains deferred
+Paragon visibility: private membership decision
+├─ gateway keeps role membership private; clients receive aggregate trust snapshots
+├─ ordinary authenticated clients may request snapshots; current paragons alone may
+│  submit or delete reports
+├─ indirect behavior/contact patterns may reveal membership; secrecy is not guaranteed
+├─ clients cannot audit or reweight individual paragon evidence; manual snapshots
+│  can become stale without refresh
+└─ public membership/direct classification rejected; friend trust remains deferred
 
 Private membership versus public: tradeoffs
-├─ recommended client model: consume gateway trust_paragon aggregate; no direct
-│  paragon classification or special treatment of individual peer reports
+├─ clients consume gateway trust_paragon aggregate; no direct paragon classification
+│  or special treatment of individual peer reports
 ├─ private: smaller client protocol/state; gateway owns membership and weighting
 │  ├─ client cannot independently reweight gateway's individual paragon evidence
 │  ├─ paragon DB sync manual; no periodic refresh; snapshot may stay stale

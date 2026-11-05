@@ -9,7 +9,8 @@ network
 │  ├─ witnessed / paragon / swarm influence: .4 / .4 / .2
 │  ├─ peers share their complete witnessed database on connection, then spray updates
 │  └─ remote witnessed opinions become swarm evidence, never local witness
-│     └─ classifying remote reporters as paragons remains pending
+│     └─ clients consume gateway's private paragon aggregate; live snapshot transport
+│        awaits authenticated client/session wiring
 ├─ reliability by ping: 30ms=1, 80ms=.8, 150ms=.5, 400ms=.05
 │  └─ interpolate linearly and clamp at endpoints; jitter and loss remain unspecified
 └─ current network transport is external; test gateway uses simulated delay and loss
@@ -31,7 +32,8 @@ Agent note
 └─ weight each paragon or swarm report by the reporter's combined credibility
    └─ credibility combines witnessed, paragon and swarm components with .4/.4/.2 weights
 
-paragons are not revealed to players, trust_paragon on peers is the initial login db update
+gateway keeps paragon membership private; authenticated peers manually fetch aggregate
+trust_paragon snapshots and receive no role list
 
 2 authority servers, 1 auth, n gateways
 auth provides gateway list

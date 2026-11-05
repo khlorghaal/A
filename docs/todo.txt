@@ -1,29 +1,25 @@
 gateway
-  settle paragon visibility and gateway reporter-weight inputs
-  manual paragon DB sync transport; snapshot access separate from paragon-only report channel
-  gateway STCP: TLS over TCP
-  live gateway assembly; standalone preflight build exists, no game logic
-  only paragons keep report channel after signin; manual snapshot request exception
-  gateway uses TLS over TCP
+├─ provide trusted combined-credibility inputs to gateway reporter weights; auth
+│  provenance waits for user specification
+├─ wire manual aggregate snapshot sync to authenticated clients; dispatch and
+│  full-replacement handling exist, live auth/client transport waits for specification
+└─ live gateway serving; current executable remains preflight until auth/session
+   provider is specified
 
 dbs
-  retention/deletion and account storage; trust/report stores now use single-file transactions
-	peers each keep db/[ trust_witnesssd trust_paragon friends ]
-	peers paragon list is locally volatile, gateway sends it each time. friends are simply appended to paragons.
-
-	witnessed is the credibility local peers calculate directly
-
-	gateway has db/[ users trust_swarm trust_paragons paragons ], where trust_paragons is trust data from paragons' witness
-
-	test dbs
-		test gateway db is peristent under build/gateway/db
-
-
-weight each paragon or swarm report by its reporter's combined credibility
+├─ gateway retention/deletion policy and account storage wait for auth/account spec;
+│  trust/report stores already use single-file transactions
+├─ peers keep db/[ trust_witnesssd trust_paragon friends ]; paragon list stays
+│  volatile and gateway sends it each time; friends append to paragons
+├─ witnessed is credibility local peers calculate directly
+├─ gateway keeps db/[ users trust_swarm trust_paragons paragons ]; trust_paragons
+│  stores paragon witnesses' trust data
+└─ test gateway DB persists under build/gateway/db
 
 
 credibility and reliability
-	production authenticated peer mapping and measured traffic; client trust hooks now wired
+└─ production authenticated peer mapping and measured ping wait for transport/auth
+   specification; client trust hooks now wired
 	
 defer>>>
 
