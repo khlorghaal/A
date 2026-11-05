@@ -8,13 +8,9 @@ gateway
 
 dbs
 ├─ gateway retention/deletion policy and account storage wait for auth/account spec;
-│  trust/report stores already use single-file transactions
-├─ peers keep db/[ trust_witnesssd trust_paragon friends ]; paragon list stays
-│  volatile and gateway sends it each time; friends append to paragons
-├─ witnessed is credibility local peers calculate directly
-├─ gateway keeps db/[ users trust_swarm trust_paragons paragons ]; trust_paragons
-│  stores paragon witnesses' trust data
-└─ test gateway DB persists under build/gateway/db
+│  report and role state already persist in gateway.json
+└─ peer friend storage waits for deferred friend-trust design; witnessed and gateway
+   aggregate trust already persist in trust.toml
 
 
 credibility and reliability
